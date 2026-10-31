@@ -44,6 +44,8 @@ swap, dan user `gambut`, lalu **mematikan login password SSH dan login root**. S
 ```bash
 BACKUP=1 ./deploy/deploy.sh
 ```
+Database kosong (skema saja, data diimpor belakangan, tanpa dump): `KOSONG=1 ./deploy/deploy.sh`.
+Disk 60 GB: jangan pakai `BACKUP=1` (7 dump harian tidak muat); simpan backup di luar server.
 Skrip mengunggah dump, me-restore DB, menyalakan API + HTTPS, mem-build dan menyalakan web, memasang
 backup harian 02:00, lalu uji asap. Kredensial produksi ditulis ke `docs/KREDENSIAL_PRODUKSI.md` (gitignore).
 Upload bisa dilanjutkan: kalau koneksi putus, jalankan ulang perintah yang sama.

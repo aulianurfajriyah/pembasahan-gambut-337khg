@@ -5,11 +5,13 @@
 #  6b. web Next.js (repo LH-KHG) di app.<DOMAIN> bila foldernya ada
 # Pakai: ./deploy/deploy.sh            DOMAIN=api.contoh.id WEB_DOMAIN=contoh.id ./deploy/deploy.sh (setelah DNS diarahkan)
 #        WEB_DIR= ./deploy/deploy.sh   (tanpa web)
+#        KOSONG=1 ./deploy/deploy.sh   (DB kosong: skema saja, tanpa dump; data diimpor belakangan)
 set -euo pipefail
 cd "$(dirname "$0")"
 . ./.state
 DUMP=${DUMP:-$(ls -t ../output/gambut_*.dump 2>/dev/null | head -1)}
-[ -n "$DUMP" ] || { echo "dump tidak ada: docker exec gambut_db pg_dump -U postgres -Fc -Z 6 gambut > output/gambut_\$(date +%F).dump"; exit 1; }
+KOSONG=${KOSONG:-0}
+[ "$KOSONG" = 1 ] || [ -n "$DUMP" ] || { echo "dump tidak ada: docker exec gambut_db pg_dump -U postgres -Fc -Z 6 gambut > output/gambut_\$(date +%F).dump"; exit 1; }
 DOMAIN=${DOMAIN:-$(echo "$IP" | tr . -).sslip.io}     # tanpa domain: HTTPS lewat sslip.io
 WEB_DIR=${WEB_DIR-../../LH-KHG}
 [ -n "$WEB_DIR" ] && [ ! -f "$WEB_DIR/package.json" ] && WEB_DIR=
@@ -25,8 +27,9 @@ $SSH 'cloud-init status --wait >/dev/null; docker compose version --short' | {
 
 echo "== 2. sinkron file"
 eval "$R --delete ../api/ gambut@$IP:/srv/gambut/api/"
-eval "$R ../db/*.sql ../db/docker-compose.yml docker-compose.prod.yml docker-compose.web.yml Caddyfile.web backup.sh gambut@$IP:/srv/gambut/db/"
+eval "$R ../db/*.sql ../db/docker-compose.yml docker-compose.prod.yml docker-compose.web.yml Caddyfile.web web.Dockerfile backup.sh gambut@$IP:/srv/gambut/db/"
 $SSH 'mkdir -p /srv/gambut/simulasi /srv/gambut/lapisan'
+mkdir -p ../simulasi/data ../lapisan   # boleh kosong (DB baru): rsync gagal bila sumbernya tidak ada
 eval "$R --delete ../simulasi/data/ gambut@$IP:/srv/gambut/simulasi/data/"   # ubin medan simulasi
 eval "$R --delete ../lapisan/ gambut@$IP:/srv/gambut/lapisan/"               # raster DEM/gambut per KHG
 if [ -n "$WEB_DIR" ]; then
@@ -79,12 +82,18 @@ EOS
 fi
 
 echo "== 4. database"
-$SSH 'cd /srv/gambut/db && docker compose up -d db && until docker compose exec -T db pg_isready -U postgres -d gambut -q && docker compose exec -T db psql -U postgres -d gambut -qtAc "SELECT 1" >/dev/null 2>&1; do sleep 3; done'
+$SSH 'cd /srv/gambut/db && docker compose up -d db && until docker compose exec -T db pg_isready -U postgres -d gambut -q && docker compose exec -T db psql -h 127.0.0.1 -U postgres -d gambut -qtAc "SELECT 1" >/dev/null 2>&1; do sleep 3; done'
 if [ "$($SSH "cd /srv/gambut/db && docker compose exec -T db psql -U postgres -d gambut -qtAc \"SELECT to_regclass('ref.khg') IS NOT NULL\"")" != "t" ]; then
+  if [ "$KOSONG" = 1 ]; then
+  echo "   skema kosong (01-03, tanpa data)"
+  $SSH 'cd /srv/gambut/db && for f in 01_schema.sql 02_trigger_fungsi.sql 03_views.sql; do
+    docker compose exec -T -e PGOPTIONS="-c client_min_messages=warning" db psql -U postgres -d gambut -v ON_ERROR_STOP=1 -q -f - < $f || exit 1; done'
+  else
   echo "   upload $(du -h "$DUMP" | cut -f1) dump (bisa dilanjutkan bila terputus)"
   eval "$R --partial --progress \"$DUMP\" gambut@$IP:/srv/backup/awal.dump"
   echo "   restore (±5-10 menit)"
   $SSH 'cd /srv/gambut/db && docker compose exec -T db pg_restore -U postgres -d gambut --no-owner --no-privileges < /srv/backup/awal.dump 2>&1 | grep -v "already exists" || true'
+  fi
 fi
 
 echo "== 5. role & view API"
@@ -112,7 +121,7 @@ else
 fi
 
 echo "== 8. uji asap"
-$SSH 'cd /srv/gambut/db && docker compose exec -T db psql -U postgres -d gambut -f - < tests.sql 2>&1 | tail -1'
+[ "$KOSONG" = 1 ] || $SSH 'cd /srv/gambut/db && docker compose exec -T db psql -U postgres -d gambut -f - < tests.sql 2>&1 | tail -1'
 B="https://$DOMAIN"
 curl -s -o /dev/null -w "   GET  /collections/khg/items   -> %{http_code} (%{time_total}s)\n" "$B/collections/khg/items?limit=1&f=json"
 curl -s -o /dev/null -w "   GET  tile kanal               -> %{http_code}\n" "$B/collections/kanal/tiles/WebMercatorQuad/12/2081/3344?f=mvt"
