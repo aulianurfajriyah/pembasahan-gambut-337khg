@@ -27,7 +27,7 @@ $SSH 'cloud-init status --wait >/dev/null; docker compose version --short' | {
 
 echo "== 2. sinkron file"
 eval "$R --delete ../api/ gambut@$IP:/srv/gambut/api/"
-eval "$R ../db/*.sql ../db/docker-compose.yml docker-compose.prod.yml docker-compose.web.yml Caddyfile.web web.Dockerfile backup.sh gambut@$IP:/srv/gambut/db/"
+eval "$R ../db/*.sql ../db/docker-compose.yml docker-compose.prod.yml docker-compose.web.yml Caddyfile.web backup.sh gambut@$IP:/srv/gambut/db/"
 $SSH 'mkdir -p /srv/gambut/simulasi /srv/gambut/lapisan'
 mkdir -p ../simulasi/data ../lapisan   # boleh kosong (DB baru): rsync gagal bila sumbernya tidak ada
 eval "$R --delete ../simulasi/data/ gambut@$IP:/srv/gambut/simulasi/data/"   # ubin medan simulasi

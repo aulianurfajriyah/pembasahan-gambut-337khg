@@ -5,7 +5,6 @@ services:
   web:
     build:
       context: ../web
-      dockerfile: ../db/web.Dockerfile   # Dockerfile tinggal di repo backend (deploy/web.Dockerfile)
       args:
         NEXT_PUBLIC_OGC_API_URL: https://${SITE_ADDRESS}
         NEXT_PUBLIC_BASEMAP_STYLE_URL: ${BASEMAP_STYLE_URL}
