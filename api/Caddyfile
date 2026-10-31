@@ -1,13 +1,41 @@
 # Reverse proxy di depan pygeoapi:
 #  - GET/HEAD/OPTIONS publik (baca terbuka)
-#  - eksekusi proses baca (dashboard, validasi, saran lokasi) publik
+#  - eksekusi proses baca (dashboard, validasi, saran lokasi, riwayat, status sinkron, simulasi) publik
 #  - semua operasi tulis lain (POST/PUT/PATCH/DELETE) wajib Basic Auth
 {$SITE_ADDRESS::80} {
 	encode zstd gzip
 	route {
+		# ubin elevasi (PNG terrarium) hasil simulasi/siapkan.py untuk tampilan medan 3D
+		handle_path /simulasi-data/* {
+			@ubin path_regexp ^/khg_\d+(_[a-z0-9]+)?/medan/\d+/\d+/\d+\.png$
+			header Access-Control-Allow-Origin *
+			header Cache-Control "public, max-age=3600"
+			root * /srv/simulasi
+			handle @ubin {
+				file_server
+			}
+			handle {
+				respond 404
+			}
+		}
+
+		# raster per KHG (DEM per varian, ketebalan gambut) hasil scripts/impor_paket.py / impor_khg.sh: meta.json + ubin PNG
+		handle_path /lapisan-data/* {
+			@lapisan path_regexp ^/khg_\d+/(meta\.json|(dem|dem_[a-z0-9]+|gambut)/\d+/\d+/\d+\.png)$
+			header Access-Control-Allow-Origin *
+			header Cache-Control "public, max-age=3600"
+			root * /srv/lapisan
+			handle @lapisan {
+				file_server
+			}
+			handle {
+				respond 404
+			}
+		}
+
 		@proses_baca {
 			method POST
-			path_regexp ^/processes/(ringkasan-dashboard|validasi-khg|saran-lokasi-pompa)/execution$
+			path_regexp ^/processes/(ringkasan-dashboard|validasi-khg|saran-lokasi-pompa|riwayat-khg|status-sinkron|simulasi-pembasahan)/execution$
 		}
 		reverse_proxy @proses_baca api:80
 
@@ -20,3 +48,6 @@
 		}
 	}
 }
+
+# situs tambahan (deploy/Caddyfile.web di server); tidak ada file = diabaikan
+import /etc/caddy/sites/*

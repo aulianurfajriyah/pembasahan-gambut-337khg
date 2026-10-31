@@ -1,0 +1,300 @@
+{
+  "keterangan": "Paket KHG Karhutla Okt 2026 (folder 2026/Karhutla/KHG). Berkas: <path>[|<layer>][?<where>]; 'zip:<alias>/...' = isi zip yang diekstrak ke output/impor_cache. Lapisan 'bersama' dipakai semua varian; lapisan per varian bergantung pada DEM.",
+  "akar": "~/Documents/Work/Geodesi/2026/Karhutla/KHG",
+  "zip": {
+    "ss": "KHG Sugihan Saleh/web_sungai-saleh-sungai-sugihan.zip",
+    "pp": "P Padang LiDAR/pulau-padang for web.zip",
+    "sl_dmpg": "KHG Sugihan Lumpur WorldDEM 12m/DMPG Sugihan Lumpur.zip"
+  },
+  "khg": [
+    {
+      "id": 75, "folder": "KHG BENGKALIS",
+      "bersama": {
+        "khg": "KHG BENGKALIS/BATAS_BENGKALIS.shp",
+        "kanal": "KHG BENGKALIS/KANAL_BENGKALIS.shp",
+        "sungai": "KHG BENGKALIS/SUNGAI_BENGKALIS.shp",
+        "areal_terbakar": "KHG BENGKALIS/BURN_AREA_BENGKALIS.shp",
+        "usaha": "KHG BENGKALIS/KONSESI_BENGKALIS.shp",
+        "dmpg": "KHG BENGKALIS/DESA_DMPG_BENGKALIS.shp",
+        "unit_prioritas": "KHG BENGKALIS/UNIT_PRIORITAS_BENGKALIS.shp"
+      },
+      "varian": [
+        {"kode": "WORLDDEM", "label": "WorldDEM", "dem": "KHG BENGKALIS/DTM_BENGKALIS_WD.tif",
+         "pompa": "KHG BENGKALIS/pump_run.gpkg|pump_stations",
+         "jalur_pompa": "KHG BENGKALIS/pump_run.gpkg|pump_routes",
+         "kanal_terpilih": "KHG BENGKALIS/pump_run.gpkg|canal_segments?selected = 1",
+         "sekat_usulan": "KHG BENGKALIS/pump_run.gpkg|sekat_proposed"}
+      ]
+    },
+    {
+      "id": 84, "folder": "P Padang LiDAR",
+      "bersama": {
+        "khg": "zip:pp/vektor/batas_khg.gpkg",
+        "kanal": "zip:pp/vektor/kanal.gpkg|kanal_existing",
+        "sungai": "zip:pp/vektor/sungai_danau.gpkg|sungai_garis",
+        "badan_air": ["zip:pp/vektor/sungai_danau.gpkg|sungai_poligon", "zip:pp/vektor/sungai_danau.gpkg|danau"],
+        "areal_terbakar": "zip:pp/vektor/burnt_area.gpkg",
+        "hotspot": "zip:pp/vektor/hotspot.gpkg",
+        "konsesi": "zip:pp/vektor/konsesi.gpkg|izin_usaha",
+        "dmpg": "zip:pp/vektor/dmpg.gpkg|zona_program",
+        "sekat_existing": "zip:pp/vektor/sekat.gpkg|sekat_existing",
+        "unit_prioritas": "zip:pp/vektor/batas_subkhg.gpkg",
+        "tma_stasiun": "zip:pp/vektor/tma.gpkg|tma_stasiun",
+        "tma_harian": "zip:pp/vektor/tma_harian.csv",
+        "gambut": "zip:pp/raster/peat_depth_ugm_125m.tif"
+      },
+      "varian": [
+        {"kode": "LIDAR", "label": "LiDAR 25 m", "dem": "zip:pp/raster/dem_lidar_25m.tif",
+         "kanal_terpilih": "zip:pp/vektor/kanal.gpkg|kanal_terpilih",
+         "sekat_usulan": "zip:pp/vektor/sekat.gpkg|sekat_terpilih",
+         "catatan": "Pompa tidak menghasilkan stasiun/rute (semua target tidak terjangkau)."},
+        {"kode": "DEMNAS", "label": "DEMNAS (DTM smooth) 25 m", "dem": "zip:pp/raster/dem_demnas_dtmsmooth_25m.tif",
+         "sekat_usulan": "zip:pp/vektor/sekat_perbandingan.gpkg|demnas_repeatpump",
+         "catatan": "Pembanding: hanya sekat usulan (repeat-pump DEMNAS). DEMNAS rata-rata +1,8 m di atas LiDAR."}
+      ]
+    },
+    {
+      "id": 107, "folder": "KHG Air Hitam Laut - Buntu Kecil",
+      "bersama": {
+        "khg": "KHG Air Hitam Laut - Buntu Kecil/batas_khg.gpkg",
+        "kanal": "KHG Air Hitam Laut - Buntu Kecil/kanal.gpkg|kanal_existing",
+        "sungai": "KHG Air Hitam Laut - Buntu Kecil/sungai_danau.gpkg|sungai_garis",
+        "badan_air": "KHG Air Hitam Laut - Buntu Kecil/sungai_danau.gpkg|sungai_poligon",
+        "areal_terbakar": "KHG Air Hitam Laut - Buntu Kecil/burnt_area.gpkg",
+        "hotspot": "KHG Air Hitam Laut - Buntu Kecil/hotspot.gpkg",
+        "konsesi": "KHG Air Hitam Laut - Buntu Kecil/konsesi.gpkg|izin_usaha",
+        "sekat_existing": "KHG Air Hitam Laut - Buntu Kecil/sekat.gpkg|sekat_existing",
+        "unit_prioritas": "KHG Air Hitam Laut - Buntu Kecil/batas_subkhg.gpkg",
+        "tma_stasiun": "KHG Air Hitam Laut - Buntu Kecil/tma.gpkg|tma_stasiun",
+        "tma_harian": "KHG Air Hitam Laut - Buntu Kecil/tma_harian.csv",
+        "gambut": "KHG Air Hitam Laut - Buntu Kecil/peat_depth_brgm_10m.tif"
+      },
+      "varian": [
+        {"kode": "LIDAR", "label": "LiDAR 25 m", "dem": "KHG Air Hitam Laut - Buntu Kecil/dem_lidar_25m.tif",
+         "pompa": "KHG Air Hitam Laut - Buntu Kecil/pompa.gpkg|pump_stations",
+         "jalur_pompa": "KHG Air Hitam Laut - Buntu Kecil/pompa.gpkg|pump_routes",
+         "kanal_terpilih": "KHG Air Hitam Laut - Buntu Kecil/kanal.gpkg|kanal_terpilih",
+         "sekat_usulan": "KHG Air Hitam Laut - Buntu Kecil/sekat.gpkg|sekat_terpilih"}
+      ]
+    },
+    {
+      "id": 146, "folder": "KHG Balangan Batangalai",
+      "bersama": {
+        "khg": "KHG Balangan Batangalai/Batas KHG_SungaiBalangan-SungaiBatangalai/BatasKHG_SungaiBalangan-SungaiBatangalai.shp",
+        "kanal": "KHG Balangan Batangalai/kanal balangan batangalai.gpkg",
+        "sungai": "KHG Balangan Batangalai/pump_run.gpkg|inputs_clipped_rivers",
+        "areal_terbakar": "KHG Balangan Batangalai/pump_run.gpkg|inputs_clipped_burn_area",
+        "usaha": "KHG Balangan Batangalai/IZIN USAHA.shp",
+        "unit_prioritas": "KHG Balangan Batangalai/unit_prioritas.gpkg",
+        "gambut": "KHG Balangan Batangalai/peat depth balangan batangalai.tif"
+      },
+      "varian": [
+        {"kode": "WORLDDEM", "label": "WorldDEM", "dem": "KHG Balangan Batangalai/DTM_WORLDDEM.tif",
+         "pompa": "KHG Balangan Batangalai/pump_run.gpkg|pump_stations",
+         "jalur_pompa": "KHG Balangan Batangalai/pump_run.gpkg|pump_routes",
+         "kanal_terpilih": "KHG Balangan Batangalai/pump_run.gpkg|canal_segments?selected = 1",
+         "sekat_usulan": "KHG Balangan Batangalai/pump_run.gpkg|sekat_proposed"}
+      ]
+    },
+    {
+      "id": 210, "folder": "Buru Mappi - buru obaa",
+      "bersama": {
+        "khg": "Buru Mappi - buru obaa/buru-mappi-obaa/vektor/batas_khg.gpkg",
+        "kanal": "Buru Mappi - buru obaa/buru-mappi-obaa/vektor/kanal.gpkg|kanal_existing",
+        "sungai": "Buru Mappi - buru obaa/buru-mappi-obaa/vektor/sungai_danau.gpkg|sungai_garis",
+        "badan_air": ["Buru Mappi - buru obaa/buru-mappi-obaa/vektor/sungai_danau.gpkg|sungai_poligon",
+                      "Buru Mappi - buru obaa/buru-mappi-obaa/vektor/sungai_danau.gpkg|danau"],
+        "areal_terbakar": "Buru Mappi - buru obaa/buru-mappi-obaa/vektor/burnt_area.gpkg",
+        "hotspot": "Buru Mappi - buru obaa/buru-mappi-obaa/vektor/hotspot.gpkg",
+        "dmpg": "Buru Mappi - buru obaa/buru-mappi-obaa/vektor/dmpg.gpkg|desa_dmpg",
+        "unit_prioritas": "Buru Mappi - buru obaa/buru-mappi-obaa/vektor/batas_subkhg.gpkg",
+        "gambut": "Buru Mappi - buru obaa/buru-mappi-obaa/raster/peat_depth_kelas_100m.tif"
+      },
+      "varian": [
+        {"kode": "BRGM", "label": "DTM BRGM 25 m", "dem": "Buru Mappi - buru obaa/buru-mappi-obaa/raster/dtm_brgm_25m.tif",
+         "kanal_terpilih": "Buru Mappi - buru obaa/buru-mappi-obaa/vektor/kanal.gpkg|kanal_terpilih",
+         "catatan": "Sekat usulan 0 (beda tinggi kanal < 0,4 m); pompa tidak dijalankan."}
+      ]
+    },
+    {
+      "id": 328, "folder": "KHG Kahayan-Sebangau",
+      "bersama": {
+        "khg": "KHG Kahayan-Sebangau/khg.gpkg",
+        "kanal": "KHG Kahayan-Sebangau/Kanal_Kahseb_49S.gpkg",
+        "sungai": "KHG Kahayan-Sebangau/rivers.gpkg",
+        "badan_air": "KHG Kahayan-Sebangau/Sungai_Kahseb_49S.shp",
+        "areal_terbakar": "KHG Kahayan-Sebangau/BA_within_KHG_Kahseb_49S_fixed.shp",
+        "hotspot": "KHG Kahayan-Sebangau/hotspots.shp",
+        "usaha": "KHG Kahayan-Sebangau/Analisis_usaha_kahseb_fixed_49S.shp",
+        "sekat_existing": "KHG Kahayan-Sebangau/blocks.gpkg",
+        "unit_prioritas": "KHG Kahayan-Sebangau/unit_prioritas.gpkg",
+        "tma_stasiun": "KHG Kahayan-Sebangau/tma_stasiun_kahseb.shp",
+        "tma_harian": "KHG Kahayan-Sebangau/tma_harian_kahseb.csv",
+        "gambut": "KHG Kahayan-Sebangau/peat_depth_m.tif"
+      },
+      "varian": [
+        {"kode": "DTM", "label": "DTM 12 m (paket awal)", "dem": "KHG Kahayan-Sebangau/DTM_KHSB_49S.tif",
+         "pompa": "KHG Kahayan-Sebangau/kahseb_coba6_pump_stations.shp",
+         "jalur_pompa": "/Users/aulianurfajriyah/Documents/GitHub/pembasahan-gambut-337khg/output/kahseb_acuan_rute_rekonstruksi.gpkg|pump_routes",
+         "rute_kanal_terpilih": "KHG Kahayan-Sebangau/kahseb_coba6_pump_routes.shp",
+         "sekat_usulan": "KHG Kahayan-Sebangau/kahseb_coba6_sekat_proposed.shp",
+         "catatan": "Jalur pompa: rekonstruksi dari jaringan run kahseb_acuan (network_edge_route.gpkg, scripts/rute_dari_jaringan.py), bukan rute model pump. Kanal terpilih diturunkan dari rute pompa coba6."},
+        {"kode": "DEMNAS", "label": "DEMNAS (smoothing)", "dem": "HASIL KAHAYAN SEBANGAU DEMNAS/DTM_DEMNASSMOOTING_KAHAYANSEBANGAU.tif",
+         "kanal_terpilih": "HASIL KAHAYAN SEBANGAU DEMNAS/pump_run3.gpkg|canal_segments?selected = 1",
+         "sekat_usulan": "HASIL KAHAYAN SEBANGAU DEMNAS/pump_run3.gpkg|sekat_proposed",
+         "catatan": "Run tanpa tahap pompa (tidak ada stasiun/rute)."}
+      ]
+    },
+    {
+      "id": 360, "folder": "KHG KAPUAS BARITO ",
+      "bersama": {
+        "khg": "KHG KAPUAS BARITO /BATAS_KAPUASBARITO.shp",
+        "kanal": "KHG KAPUAS BARITO /KANAL_EKSISTING_KAPUASBARITO.shp",
+        "sungai": "KHG KAPUAS BARITO /SUNGAI_KAPUASBARITO.shp",
+        "areal_terbakar": "KHG KAPUAS BARITO /BURN_AREA_KAPUASBARITO.shp",
+        "usaha": "KHG KAPUAS BARITO /KONSESI_KAPUASBARITO.shp",
+        "unit_prioritas": "KHG KAPUAS BARITO /UNIT_PRIORITAS_KAPUASBARITO.shp"
+      },
+      "varian": [
+        {"kode": "BRGM", "label": "DTM kontur BRGM", "dem": "KHG KAPUAS BARITO /DTM_KAPUASBARITO_KONTURBRGM.tif",
+         "pompa": "KHG KAPUAS BARITO /kapuasbarito.gpkg|pump_stations",
+         "jalur_pompa": "KHG KAPUAS BARITO /kapuasbarito.gpkg|pump_routes",
+         "kanal_terpilih": "KHG KAPUAS BARITO /KANAL_TERPILIH_KAPUASBARITO.shp?selected = 1",
+         "sekat_usulan": "KHG KAPUAS BARITO /SEKAT_KANAL_KAPUASBARITO.shp"}
+      ]
+    },
+    {
+      "id": 520, "folder": "KHG Menpawah Peniti",
+      "bersama": {
+        "khg": "KHG Menpawah Peniti/Batas KHG Menpawah Peniti.shp",
+        "kanal": "KHG Menpawah Peniti/kanal menpawah peniti.shp",
+        "sungai": "KHG Menpawah Peniti/sungai ln menpawah peniti.shp",
+        "areal_terbakar": "KHG Menpawah Peniti/BA menpawah peniti.shp",
+        "usaha": "KHG Menpawah Peniti/peatdepth menpawah peniti.shp",
+        "gambut": "KHG Menpawah Peniti/peat depth model KHG Sungai Senpawah Peniti.tif"
+      },
+      "varian": [
+        {"kode": "WORLDDEM", "label": "WorldDEM", "dem": "KHG Menpawah Peniti/DTM world dem.tif",
+         "pompa": "KHG Menpawah Peniti/pump_run.gpkg|pump_stations",
+         "jalur_pompa": "KHG Menpawah Peniti/pump_run.gpkg|pump_routes",
+         "kanal_terpilih": "KHG Menpawah Peniti/pump_run.gpkg|canal_segments?selected = 1",
+         "sekat_usulan": "KHG Menpawah Peniti/pump_run.gpkg|sekat_proposed",
+         "unit_prioritas": "KHG Menpawah Peniti/pump_run.gpkg|subkhg_selected"},
+        {"kode": "DEMNAS", "label": "DEMNAS (DTM smooth)", "dem": "KHG Menpawah Peniti DEMNAS/dtm smooth.tif",
+         "pompa": "KHG Menpawah Peniti DEMNAS/pump_run_demnas.gpkg|pump_stations",
+         "jalur_pompa": "KHG Menpawah Peniti DEMNAS/pump_run_demnas.gpkg|pump_routes",
+         "kanal_terpilih": "KHG Menpawah Peniti DEMNAS/pump_run_demnas.gpkg|canal_segments?selected = 1",
+         "sekat_usulan": "KHG Menpawah Peniti DEMNAS/pump_run_demnas.gpkg|sekat_proposed",
+         "unit_prioritas": "KHG Menpawah Peniti DEMNAS/pump_run_demnas.gpkg|subkhg_selected"}
+      ]
+    },
+    {
+      "id": 522, "folder": "KHG Mendahara - Batanghari",
+      "bersama": {
+        "khg": "KHG Mendahara - Batanghari/batas_khg.gpkg",
+        "kanal": "KHG Mendahara - Batanghari/kanal.gpkg|kanal_existing",
+        "sungai": "KHG Mendahara - Batanghari/sungai_danau.gpkg|sungai_garis",
+        "badan_air": ["KHG Mendahara - Batanghari/sungai_danau.gpkg|sungai_poligon",
+                      "KHG Mendahara - Batanghari/sungai_danau.gpkg|danau"],
+        "areal_terbakar": "KHG Mendahara - Batanghari/burnt_area.gpkg",
+        "hotspot": "KHG Mendahara - Batanghari/hotspot.gpkg",
+        "konsesi": "KHG Mendahara - Batanghari/konsesi.gpkg|izin_usaha",
+        "dmpg": "KHG Mendahara - Batanghari/dmpg.gpkg|zona_program",
+        "sekat_existing": "KHG Mendahara - Batanghari/sekat.gpkg|sekat_existing",
+        "unit_prioritas": "KHG Mendahara - Batanghari/batas_subkhg.gpkg",
+        "tma_stasiun": "KHG Mendahara - Batanghari/tma.gpkg|tma_stasiun",
+        "tma_harian": "KHG Mendahara - Batanghari/tma_harian.csv",
+        "gambut": "KHG Mendahara - Batanghari/peat_depth_brgm_10m.tif"
+      },
+      "varian": [
+        {"kode": "LIDAR", "label": "LiDAR 25 m", "dem": "KHG Mendahara - Batanghari/dem_lidar_25m.tif",
+         "pompa": "KHG Mendahara - Batanghari/pompa.gpkg|pump_stations",
+         "jalur_pompa": "KHG Mendahara - Batanghari/pompa.gpkg|pump_routes",
+         "kanal_terpilih": "KHG Mendahara - Batanghari/kanal.gpkg|kanal_terpilih",
+         "sekat_usulan": "KHG Mendahara - Batanghari/sekat.gpkg|sekat_terpilih"}
+      ]
+    },
+    {
+      "id": 624, "folder": "KHG Punggurbesar-Kapuas",
+      "bersama": {
+        "khg": "KHG Punggurbesar-Kapuas DEMNAS/batas_khg.gpkg",
+        "kanal": "KHG Punggurbesar-Kapuas DEMNAS/kanal.gpkg|kanal_existing",
+        "sungai": "KHG Punggurbesar-Kapuas DEMNAS/sungai_danau.gpkg|sungai_garis",
+        "badan_air": "KHG Punggurbesar-Kapuas DEMNAS/sungai_danau.gpkg|sungai_poligon",
+        "areal_terbakar": "KHG Punggurbesar-Kapuas DEMNAS/burnt_area.gpkg",
+        "hotspot": "KHG Punggurbesar-Kapuas DEMNAS/hotspot.gpkg",
+        "konsesi": "KHG Punggurbesar-Kapuas DEMNAS/konsesi.gpkg|izin_usaha",
+        "dmpg": "KHG Punggurbesar-Kapuas DEMNAS/dmpg.gpkg|zona_program",
+        "sekat_existing": "KHG Punggurbesar-Kapuas DEMNAS/sekat.gpkg|sekat_existing",
+        "tma_stasiun": "KHG Punggurbesar-Kapuas DEMNAS/tma.gpkg|tma_stasiun",
+        "tma_harian": "KHG Punggurbesar-Kapuas DEMNAS/tma_harian.csv",
+        "gambut": "KHG Punggurbesar-Kapuas DEMNAS/peat_depth_brgm_10m.tif"
+      },
+      "varian": [
+        {"kode": "LIDAR", "label": "LiDAR (DTM BRGM 10 m)", "dem": "KHG Punggurbesar-Kapuas LiDAR/dtm_brgm_10m.tif",
+         "pompa": "KHG Punggurbesar-Kapuas LiDAR/pompa.gpkg|pump_stations",
+         "jalur_pompa": "KHG Punggurbesar-Kapuas LiDAR/pompa.gpkg|pump_routes",
+         "kanal_terpilih": "KHG Punggurbesar-Kapuas LiDAR/kanal.gpkg|kanal_terpilih",
+         "sekat_usulan": "KHG Punggurbesar-Kapuas LiDAR/sekat.gpkg|sekat_terpilih",
+         "unit_prioritas": "KHG Punggurbesar-Kapuas LiDAR/batas_subkhg.gpkg"},
+        {"kode": "DEMNAS", "label": "DEMNAS 30 m", "dem": "KHG Punggurbesar-Kapuas DEMNAS/dem_demnas_30m.tif",
+         "pompa": "KHG Punggurbesar-Kapuas DEMNAS/pompa.gpkg|pump_stations",
+         "jalur_pompa": "KHG Punggurbesar-Kapuas DEMNAS/pompa.gpkg|pump_routes",
+         "kanal_terpilih": "KHG Punggurbesar-Kapuas DEMNAS/kanal.gpkg|kanal_terpilih",
+         "sekat_usulan": "KHG Punggurbesar-Kapuas DEMNAS/sekat.gpkg|sekat_terpilih",
+         "unit_prioritas": "KHG Punggurbesar-Kapuas DEMNAS/batas_subkhg.gpkg"}
+      ]
+    },
+    {
+      "id": 650, "folder": "KHG Sugihan Saleh",
+      "bersama": {
+        "khg": "zip:ss/vektor/batas_khg.gpkg",
+        "kanal": "zip:ss/vektor/kanal.gpkg|kanal_existing",
+        "sungai": "zip:ss/vektor/sungai_danau.gpkg|sungai_garis",
+        "badan_air": "zip:ss/vektor/sungai_danau.gpkg|sungai_poligon",
+        "areal_terbakar": "zip:ss/vektor/burnt_area.gpkg",
+        "hotspot": "zip:ss/vektor/hotspot.gpkg",
+        "konsesi": "zip:ss/vektor/konsesi.gpkg|izin_usaha",
+        "dmpg": "zip:ss/vektor/dmpg.gpkg|zona_program",
+        "sekat_existing": "zip:ss/vektor/sekat.gpkg|sekat_existing",
+        "unit_prioritas": "zip:ss/vektor/batas_subkhg.gpkg",
+        "tma_stasiun": "zip:ss/vektor/tma.gpkg|tma_stasiun_sekitar",
+        "tma_harian": "zip:ss/vektor/tma_harian.csv",
+        "gambut": "zip:ss/raster/peat_depth_survei_klh2020_20m.tif"
+      },
+      "varian": [
+        {"kode": "WORLDDEM", "label": "WorldDEM 12 m", "dem": "zip:ss/raster/dem_worlddem_12m.tif",
+         "pompa": "zip:ss/vektor/pompa.gpkg|pump_stations",
+         "jalur_pompa": "zip:ss/vektor/pompa.gpkg|pump_routes",
+         "kanal_terpilih": "zip:ss/vektor/kanal.gpkg|kanal_terpilih",
+         "sekat_usulan": "zip:ss/vektor/sekat.gpkg|sekat_terpilih",
+         "catatan": "Run B: S01-S03."},
+        {"kode": "LIDAR", "label": "LiDAR KLH 2020 20 m", "dem": "zip:ss/raster/dem_lidar_klh2020_20m.tif",
+         "pompa": "KHG Sugihan Saleh/04_pompa_A_LiDAR20m_S02_S03/pump.gpkg|pump_stations",
+         "jalur_pompa": "KHG Sugihan Saleh/04_pompa_A_LiDAR20m_S02_S03/pump.gpkg|pump_routes",
+         "kanal_terpilih": "KHG Sugihan Saleh/04_pompa_A_LiDAR20m_S02_S03/pump.gpkg|canal_segments?selected = 1",
+         "sekat_usulan": "KHG Sugihan Saleh/04_pompa_A_LiDAR20m_S02_S03/pump.gpkg|sekat_proposed",
+         "catatan": "Run A: S02-S03 saja; LiDAR menutup 62% KHG."}
+      ]
+    },
+    {
+      "id": 732, "folder": "KHG Sugihan Lumpur WorldDEM 12m",
+      "bersama": {
+        "kanal": "KHG Sugihan Lumpur WorldDEM 12m/pump_run.gpkg|inputs_clipped_canals",
+        "sungai": "KHG Sugihan Lumpur WorldDEM 12m/pump_run.gpkg|inputs_clipped_rivers",
+        "areal_terbakar": "KHG Sugihan Lumpur WorldDEM 12m/pump_run.gpkg|inputs_clipped_burn_area",
+        "usaha": "KHG Sugihan Lumpur WorldDEM 12m/Konsesi.gpkg",
+        "dmpg": "zip:sl_dmpg/dpmg_.shp",
+        "sekat_existing": "KHG Sugihan Lumpur WorldDEM 12m/pump_run.gpkg|inputs_clipped_sekat_existing"
+      },
+      "varian": [
+        {"kode": "WORLDDEM", "label": "WorldDEM 12 m", "dem": "KHG Sugihan Lumpur WorldDEM 12m/DTM_worlddem_12m.tif",
+         "pompa": "KHG Sugihan Lumpur WorldDEM 12m/pump_run.gpkg|pump_stations",
+         "jalur_pompa": "KHG Sugihan Lumpur WorldDEM 12m/pump_run.gpkg|pump_routes",
+         "kanal_terpilih": "KHG Sugihan Lumpur WorldDEM 12m/pump_run.gpkg|canal_segments?selected = 1",
+         "sekat_usulan": "KHG Sugihan Lumpur WorldDEM 12m/pump_run.gpkg|sekat_proposed",
+         "unit_prioritas": "KHG Sugihan Lumpur WorldDEM 12m/pump_run.gpkg|subkhg_selected"}
+      ]
+    }
+  ]
+}

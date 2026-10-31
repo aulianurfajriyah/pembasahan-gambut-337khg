@@ -15,17 +15,19 @@ SELECT DISTINCT ON (khg_id) khg_id, id AS versi_id, nomor, status, diajukan_oleh
 CREATE VIEW alur.v_khg_daftar AS
 WITH hs AS (SELECT khg_id, count(*) AS n FROM peta.hotspot
              WHERE waktu >= now() - interval '30 days' GROUP BY 1),
-pm AS (SELECT khg_id, count(*) AS n FROM peta.pompa GROUP BY 1),
+-- data varian DEM (sumber IMPOR_KHG:*) hanya dihitung untuk varian utama; salinan kanal varian tidak dihitung
+pm AS (SELECT khg_id, count(*) AS n FROM peta.pompa WHERE ref.varian_utama(khg_id, sumber) GROUP BY 1),
 kn AS (SELECT khg_id,
               round(sum(panjang_m) FILTER (WHERE status = 'aktif') / 1000, 1) AS km_aktif,
               round(sum(panjang_m) / 1000, 1) AS km_total
-         FROM peta.kanal GROUP BY 1),
+         FROM peta.kanal WHERE coalesce(sumber, '') NOT LIKE 'IMPOR_KHG:%' GROUP BY 1),
 sk AS (SELECT s.khg_id, count(*) AS n,
               count(*) FILTER (WHERE s.status = 'rencana')  AS rencana,
               count(*) FILTER (WHERE s.status = 'existing') AS existing,
               avg((c.frekuensi_terbakar <> 'NON Terbakar')::int) AS porsi_terbakar,
               avg((c.fungsi_eg_ketebalan LIKE '%>= 3%')::int)    AS porsi_gambut_dalam
          FROM peta.sekat s LEFT JOIN peta.sekat_konteks c ON c.sekat_id = s.id
+        WHERE ref.varian_utama(s.khg_id, s.sumber)
         GROUP BY 1),
 akhir AS (SELECT DISTINCT ON (khg_id) khg_id, waktu, via, pengguna
             FROM alur.perubahan ORDER BY khg_id, waktu DESC)
@@ -67,30 +69,35 @@ SELECT
   (SELECT count(*) FROM ref.khg) AS khg_total,
   (SELECT count(*) FROM alur.khg_versi
     WHERE status IN ('approved','printed') AND diputuskan_at >= now() - interval '7 days') AS khg_disetujui_minggu_ini,
-  (SELECT count(*) FROM peta.pompa WHERE status = 'rencana') AS pompa_rencana,
-  (SELECT count(*) FROM peta.pompa WHERE created_at >= now() - interval '7 days') AS pompa_minggu_ini,
-  (SELECT round(coalesce(sum(panjang_m) FILTER (WHERE status = 'aktif'), 0) / 1000, 1) FROM peta.kanal) AS kanal_aktif_km,
-  (SELECT round(coalesce(sum(panjang_m), 0) / 1000, 1) FROM peta.kanal) AS kanal_total_km,
+  -- data varian DEM hanya dihitung untuk varian utama (ref.varian_dem)
+  (SELECT count(*) FROM peta.pompa WHERE status = 'rencana' AND ref.varian_utama(khg_id, sumber)) AS pompa_rencana,
+  (SELECT count(*) FROM peta.pompa WHERE created_at >= now() - interval '7 days' AND ref.varian_utama(khg_id, sumber)) AS pompa_minggu_ini,
+  (SELECT round(coalesce(sum(panjang_m) FILTER (WHERE status = 'aktif'), 0) / 1000, 1) FROM peta.kanal
+    WHERE coalesce(sumber, '') NOT LIKE 'IMPOR_KHG:%') AS kanal_aktif_km,
+  (SELECT round(coalesce(sum(panjang_m), 0) / 1000, 1) FROM peta.kanal WHERE coalesce(sumber, '') NOT LIKE 'IMPOR_KHG:%') AS kanal_total_km,
   (SELECT count(*) FROM peta.hotspot WHERE waktu >= now() - interval '30 days') AS hotspot_30h,
   (SELECT count(*) FROM peta.hotspot
     WHERE waktu >= now() - interval '60 days' AND waktu < now() - interval '30 days') AS hotspot_30h_sebelumnya,
   (SELECT count(*) FROM peta.v_tmat_alert) AS logger_alert,
   (SELECT count(DISTINCT khg_id) FROM peta.v_tmat_alert) AS khg_alert,
-  (SELECT count(*) FROM peta.sekat) AS sekat_total,
+  (SELECT count(*) FROM peta.sekat WHERE ref.varian_utama(khg_id, sumber)) AS sekat_total,
   (SELECT count(*) FROM peta.sekat WHERE status = 'existing') AS sekat_existing,
   (SELECT jsonb_object_agg(status, n) FROM
-     (SELECT status, count(*) AS n FROM alur.v_khg_status GROUP BY 1) s) AS status_alur;
+     (SELECT status, count(*) AS n FROM alur.v_khg_status GROUP BY 1) s) AS status_alur,
+  (SELECT count(*) FROM peta.sekat WHERE dipilih_bangun AND ref.varian_utama(khg_id, sumber)) AS sekat_final,
+  (SELECT count(DISTINCT khg_id) FROM peta.sekat WHERE dipilih_bangun AND ref.varian_utama(khg_id, sumber)) AS khg_dengan_sekat_final;
 
 -- Panel "Layer" di Workspace Peta: jumlah fitur per layer per KHG
 CREATE VIEW peta.v_khg_legenda AS
           SELECT khg_id, 'sungai' AS layer, count(*) AS jumlah FROM peta.sungai GROUP BY 1
 UNION ALL SELECT khg_id, 'kanal_aktif', count(*) FROM peta.kanal WHERE status = 'aktif' GROUP BY 1
 UNION ALL SELECT khg_id, 'kanal_tidak_aktif', count(*) FROM peta.kanal WHERE status IN ('tidak_aktif', 'tersumbat') GROUP BY 1
-UNION ALL SELECT khg_id, 'kanal_belum_disurvei', count(*) FROM peta.kanal WHERE status IS NULL GROUP BY 1
-UNION ALL SELECT khg_id, 'pompa', count(*) FROM peta.pompa GROUP BY 1
+UNION ALL SELECT khg_id, 'kanal_belum_disurvei', count(*) FROM peta.kanal WHERE status IS NULL AND coalesce(sumber, '') NOT LIKE 'IMPOR_KHG:%' GROUP BY 1
+UNION ALL SELECT khg_id, 'pompa', count(*) FROM peta.pompa WHERE ref.varian_utama(khg_id, sumber) GROUP BY 1
 UNION ALL SELECT khg_id, 'pintu_air', count(*) FROM peta.pintu_air GROUP BY 1
 UNION ALL SELECT khg_id, 'sekat_existing', count(*) FROM peta.sekat WHERE status = 'existing' GROUP BY 1
-UNION ALL SELECT khg_id, 'sekat_rencana', count(*) FROM peta.sekat WHERE status = 'rencana' GROUP BY 1
+UNION ALL SELECT khg_id, 'sekat_rencana', count(*) FROM peta.sekat WHERE status = 'rencana' AND ref.varian_utama(khg_id, sumber) GROUP BY 1
+UNION ALL SELECT khg_id, 'sekat_final', count(*) FROM peta.sekat WHERE dipilih_bangun AND ref.varian_utama(khg_id, sumber) GROUP BY 1
 UNION ALL SELECT khg_id, 'sumur_bor', count(*) FROM peta.sumur_bor GROUP BY 1
 UNION ALL SELECT khg_id, 'hotspot_tahun_ini', count(*) FROM peta.hotspot
            WHERE waktu >= date_trunc('year', now()) GROUP BY 1
@@ -128,3 +135,17 @@ SELECT s.id, s.kode, d.nama AS desa, k.nama AS nama_khg, s.khg_id, s.kedalaman_m
   LEFT JOIN ref.khg k ON k.id = s.khg_id
   LEFT JOIN LATERAL (SELECT tanggal, debit_lps FROM peta.sumur_debit
                       WHERE sumur_id = s.id ORDER BY tanggal DESC LIMIT 1) db ON true;
+
+-- Riwayat perubahan tanpa isi baris (aman untuk dibaca publik): siapa, kapan, fitur apa, kolom apa
+CREATE VIEW alur.v_riwayat AS
+SELECT p.id, p.waktu, p.tabel, p.fitur_id, p.khg_id, p.aksi, p.via, p.pengguna,
+       coalesce(p.data_baru ->> 'kode', p.data_lama ->> 'kode') AS kode,
+       CASE WHEN p.aksi = 'U' THEN
+         (SELECT array_agg(k ORDER BY k) FROM jsonb_object_keys(p.data_baru) k
+           WHERE p.data_baru -> k IS DISTINCT FROM p.data_lama -> k
+             AND k NOT IN ('updated_at', 'updated_by', 'updated_via', 'rev', 'created_at', 'created_by')
+             -- geometri yang dikirim ulang lewat API (PUT) berubah di digit terakhir; abaikan selisih < 1e-9 derajat
+             AND NOT (k = 'geom' AND ST_HausdorffDistance(ST_GeomFromGeoJSON(p.data_lama ->> k),
+                                                          ST_GeomFromGeoJSON(p.data_baru ->> k)) < 1e-9))
+       END AS kolom_berubah
+  FROM alur.perubahan p;
