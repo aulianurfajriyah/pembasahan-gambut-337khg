@@ -1,0 +1,5 @@
+# Situs web Next.js; di-import oleh api/Caddyfile (hanya di server, lewat docker-compose.web.yml)
+{$WEB_ADDRESS} {
+	encode zstd gzip
+	reverse_proxy web:3000
+}

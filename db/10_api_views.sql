@@ -10,7 +10,9 @@ SELECT k.id AS khg_id,
            AND h.waktu >= (SELECT max(waktu) FROM peta.hotspot) - interval '30 days') AS hotspot_30h,
        (SELECT count(*) FROM peta.hotspot h WHERE h.khg_id = k.id
            AND h.waktu >= date_trunc('year', (SELECT max(waktu) FROM peta.hotspot))) AS hotspot_tahun_ini,
-       (SELECT round(sum(panjang_m) / 1000, 1) FROM peta.kanal c WHERE c.khg_id = k.id) AS kanal_km,
+       -- baris kanal varian DEM (sumber IMPOR_KHG:*) hanya salinan kanal terpilih, tidak dihitung
+       (SELECT round(sum(panjang_m) / 1000, 1) FROM peta.kanal c WHERE c.khg_id = k.id
+           AND coalesce(c.sumber, '') NOT LIKE 'IMPOR_KHG:%') AS kanal_km,
        (SELECT count(*) FROM peta.sekat s WHERE s.khg_id = k.id AND s.status = 'rencana') AS sekat_rencana,
        (SELECT count(*) FROM peta.sekat s WHERE s.khg_id = k.id AND s.status = 'existing') AS sekat_existing,
        (SELECT count(*) FROM peta.pintu_air p WHERE p.khg_id = k.id) AS pintu_air,
@@ -28,13 +30,27 @@ CREATE UNIQUE INDEX ON api.khg_statistik (khg_id);
 CREATE VIEW api.khg AS
 SELECT k.id, k.kode, k.nama, p.nama AS provinsi, p.singkatan AS provinsi_singkat, k.target_2026, k.luas_ha,
        st.nomor AS versi, st.status, st.diajukan_oleh, st.diajukan_at, st.reviewer, st.diputuskan_at,
-       s.hotspot_30h, s.hotspot_tahun_ini, s.kanal_km, s.sekat_rencana, s.sekat_existing, s.pintu_air,
-       (SELECT count(*) FROM peta.pompa x WHERE x.khg_id = k.id) AS pompa,
-       (SELECT round(sum(panjang_m) / 1000, 1) FROM peta.kanal c WHERE c.khg_id = k.id AND c.status = 'aktif') AS kanal_aktif_km,
+       s.hotspot_30h, s.hotspot_tahun_ini, s.kanal_km,
+       -- sekat & pintu air dihitung langsung (bukan dari materialized view) agar edit QGIS langsung terlihat;
+       -- data varian DEM hanya dihitung untuk varian utama (ref.varian_dem)
+       (SELECT count(*) FROM peta.sekat x WHERE x.khg_id = k.id AND x.status = 'rencana'
+           AND ref.varian_utama(k.id, x.sumber)) AS sekat_rencana,
+       (SELECT count(*) FROM peta.sekat x WHERE x.khg_id = k.id AND x.status = 'existing') AS sekat_existing,
+       (SELECT count(*) FROM peta.sekat x WHERE x.khg_id = k.id AND x.dipilih_bangun
+           AND ref.varian_utama(k.id, x.sumber)) AS sekat_final,
+       (SELECT count(*) FROM peta.pintu_air x WHERE x.khg_id = k.id) AS pintu_air,
+       (SELECT count(*) FROM peta.pompa x WHERE x.khg_id = k.id AND ref.varian_utama(k.id, x.sumber)) AS pompa,
+       (SELECT round(sum(panjang_m) / 1000, 1) FROM peta.kanal c WHERE c.khg_id = k.id AND c.status = 'aktif'
+           AND coalesce(c.sumber, '') NOT LIKE 'IMPOR_KHG:%') AS kanal_aktif_km,
        s.porsi_pernah_terbakar, s.porsi_gambut_dalam,
        round(100 * (0.4 * coalesce(s.porsi_pernah_terbakar, 0) + 0.3 * coalesce(s.porsi_gambut_dalam, 0)
                   + 0.3 * coalesce(s.hotspot_30h::numeric / nullif(max(s.hotspot_30h) OVER (), 0), 0)))::int AS skor_prioritas,
-       k.geom
+       k.geom,
+       -- bbox terpisah agar klien bisa memusatkan peta tanpa mengunduh seluruh batas KHG
+       ST_XMin(k.geom) AS bbox_xmin, ST_YMin(k.geom) AS bbox_ymin,
+       ST_XMax(k.geom) AS bbox_xmax, ST_YMax(k.geom) AS bbox_ymax,
+       (SELECT round(coalesce(sum(panjang_m), 0) / 1000, 1) FROM peta.kanal c
+         WHERE c.khg_id = k.id AND c.dipilih_digunakan AND ref.varian_utama(k.id, c.sumber)) AS kanal_terpilih_km
   FROM ref.khg k
   JOIN ref.provinsi p ON p.id = k.provinsi_utama_id
   LEFT JOIN alur.v_khg_status st ON st.khg_id = k.id
@@ -52,7 +68,7 @@ SELECT s.id, s.kode, s.status, s.sumber, j.label AS jenis_kanal, s.kanal_id, s.e
        k.nama AS khg, d.nama AS desa, pr.nama AS perusahaan,
        b.kodefikasi, b.tipe, b.jenis_bangunan, b.bahan, b.tahun_bangun, b.pelaksana, b.anggaran,
        c.penutupan_lahan_2022, c.kerusakan_eg_2024, c.tebal_gambut_kelas, c.tahun_terbakar,
-       c.prioritas_intervensi, c.program_dmpg, s.qc_flag, s.updated_at, s.updated_via, s.geom
+       c.prioritas_intervensi, c.program_dmpg, s.qc_flag, s.dipilih_bangun, s.updated_at, s.updated_via, s.geom
   FROM peta.sekat s
   LEFT JOIN ref.jenis_kanal j ON j.kode = s.jenis_kanal
   LEFT JOIN ref.khg k ON k.id = s.khg_id
@@ -72,8 +88,9 @@ SELECT a.id, array_to_string(a.tahun_terbakar, ',') AS tahun_terbakar, a.frekuen
   FROM peta.areal_terbakar a LEFT JOIN ref.khg k ON k.id = a.khg_id;
 
 CREATE VIEW api.konsesi AS
-SELECT c.id, pr.nama AS perusahaan, c.jenis, c.sumber, c.geom
-  FROM peta.konsesi c LEFT JOIN ref.perusahaan pr ON pr.id = c.perusahaan_id;
+SELECT c.id, pr.nama AS perusahaan, c.jenis, c.sumber, k.nama AS khg, c.geom
+  FROM peta.konsesi c LEFT JOIN ref.perusahaan pr ON pr.id = c.perusahaan_id
+  LEFT JOIN ref.khg k ON k.id = c.khg_id;
 
 CREATE VIEW api.ketebalan_gambut AS
 SELECT t.id, k.nama AS khg, t.kelas, t.tebal_min_m, t.tebal_max_m, t.geom
@@ -83,7 +100,7 @@ CREATE VIEW api.sumur_bor AS SELECT * FROM peta.v_sumur_bor;
 
 CREATE VIEW api.kanal AS
 SELECT c.id, c.kode, j.label AS jenis_kanal, coalesce(sk.label, 'Belum disurvei') AS status,
-       c.panjang_m, k.nama AS khg, c.sumber, c.geom
+       c.panjang_m, k.nama AS khg, c.sumber, c.geom, c.dipilih_digunakan
   FROM peta.kanal c
   LEFT JOIN ref.jenis_kanal j ON j.kode = c.jenis_kanal
   LEFT JOIN ref.status_kanal sk ON sk.kode = c.status
@@ -109,6 +126,43 @@ BEGIN
         LEFT JOIN ref.jenis_kanal j ON j.kode = u.jenis_kanal$f$, t);
   END LOOP;
 END $$;
+
+-- lapisan per KHG (scripts/impor_khg.sh)
+CREATE VIEW api.unit_prioritas AS
+SELECT u.id, u.unit_id, k.nama AS khg, u.kelas, u.peringkat, u.skor_dampak, u.skor_kelayakan, u.skor_urgensi,
+       u.skor_risiko, u.pengelola, u.luas_ha, u.sumber, u.geom
+  FROM analisis.unit_prioritas u LEFT JOIN ref.khg k ON k.id = u.khg_id;
+
+CREATE VIEW api.dmpg AS
+SELECT d.id, d.program, d.luas_ha, k.nama AS khg, d.sumber, d.geom
+  FROM analisis.dmpg d LEFT JOIN ref.khg k ON k.id = d.khg_id;
+
+CREATE VIEW api.jalur_pompa AS
+SELECT j.id, j.kode, j.panjang_m, j.angkat_m, j.debit_m3s, j.layanan_ha, k.nama AS khg, j.sumber, j.geom
+  FROM peta.jalur_pompa j LEFT JOIN ref.khg k ON k.id = j.khg_id;
+
+CREATE VIEW api.badan_air AS
+SELECT b.id, b.nama, k.nama AS khg, b.sumber, b.geom
+  FROM peta.badan_air b LEFT JOIN ref.khg k ON k.id = b.khg_id;
+
+-- stasiun TMA + bacaan terakhir; tmat_m positif = muka air di bawah permukaan.
+-- bacaan: deret harian sebagai teks JSON [[tanggal, tmat_m], ...] untuk grafik kecil di popup
+CREATE VIEW api.stasiun_tma AS
+SELECT l.id, l.kode, l.nama, k.nama AS khg, l.sumber,
+       l.atribut->>'kode_pt' AS kode_pt, l.atribut->>'unit_id' AS unit_id,
+       b.n_bacaan, b.tanggal_awal, b.tanggal_akhir, b.tmat_rata_m, b.tmat_maks_m,
+       akhir.tmat_m AS tmat_akhir_m, b.bacaan, l.geom
+  FROM peta.logger_tmat l
+  LEFT JOIN ref.khg k ON k.id = l.khg_id
+  LEFT JOIN LATERAL (
+    -- tanggal menurut WIB (bacaan harian disimpan sebagai tengah malam WIB)
+    SELECT count(*) AS n_bacaan, min(waktu AT TIME ZONE 'Asia/Jakarta')::date AS tanggal_awal,
+           max(waktu AT TIME ZONE 'Asia/Jakarta')::date AS tanggal_akhir,
+           round(avg(tmat_m), 2) AS tmat_rata_m, max(tmat_m) AS tmat_maks_m,
+           json_agg(json_build_array((waktu AT TIME ZONE 'Asia/Jakarta')::date, tmat_m) ORDER BY waktu)::text AS bacaan
+      FROM peta.tmat_bacaan t WHERE t.logger_id = l.id) b ON true
+  LEFT JOIN LATERAL (
+    SELECT tmat_m FROM peta.tmat_bacaan t WHERE t.logger_id = l.id ORDER BY waktu DESC LIMIT 1) akhir ON true;
 
 CREATE VIEW api.kontur AS
 SELECT c.id, c.elevasi_m, k.nama AS khg, c.geom FROM analisis.kontur c LEFT JOIN ref.khg k ON k.id = c.khg_id;

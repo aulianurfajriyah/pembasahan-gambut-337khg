@@ -37,6 +37,10 @@ docs/assets/
 *.sql.gz
 *.pbf
 *.mvt
+*.npz
+simulasi/data/
+simulasi/dem/
+lapisan/
 
 # --- lain-lain ---
 .DS_Store

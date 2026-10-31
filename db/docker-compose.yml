@@ -34,6 +34,8 @@ services:
     volumes:
       - ../api/pygeoapi-config.yml:/pygeoapi/local.config.yml:ro
       - ../api/gambut_processes.py:/plugins/gambut_processes.py:ro
+      - ../api/simulasi_model.py:/plugins/simulasi_model.py:ro
+      - ../simulasi:/simulasi
     restart: unless-stopped
 
   proxy:          # Caddy: GET publik, tulis wajib Basic Auth, HTTPS otomatis bila SITE_ADDRESS = domain
@@ -47,6 +49,8 @@ services:
     ports: ["8080:80", "8443:443"]
     volumes:
       - ../api/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../simulasi/data:/srv/simulasi:ro
+      - ../lapisan:/srv/lapisan:ro
       - caddy_data:/data
     restart: unless-stopped
 

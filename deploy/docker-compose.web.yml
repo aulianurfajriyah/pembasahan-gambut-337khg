@@ -1,0 +1,20 @@
+# Web Next.js (repo LH-KHG, disinkron deploy.sh ke /srv/gambut/web) di belakang Caddy yang sama.
+# NEXT_PUBLIC_* ditanam saat build: ubah .env lalu jalankan ulang deploy.sh (atau compose up --build web).
+# OGC_API_USER/OGC_API_PASSWORD sengaja TIDAK diisi: tanpa login, web publik harus read-only.
+services:
+  web:
+    build:
+      context: ../web
+      args:
+        NEXT_PUBLIC_OGC_API_URL: https://${SITE_ADDRESS}
+        NEXT_PUBLIC_BASEMAP_STYLE_URL: ${BASEMAP_STYLE_URL}
+        ESTIMASI_BIAYA_PER_SEKAT: ${ESTIMASI_BIAYA_PER_SEKAT:-}
+    container_name: gambut_web
+    environment:
+      ESTIMASI_BIAYA_PER_SEKAT: ${ESTIMASI_BIAYA_PER_SEKAT:-}
+    restart: unless-stopped
+  proxy:
+    environment:
+      WEB_ADDRESS: ${WEB_ADDRESS}
+    volumes:
+      - ./Caddyfile.web:/etc/caddy/sites/web.caddy:ro

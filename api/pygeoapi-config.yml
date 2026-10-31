@@ -16,10 +16,12 @@ server:
   map:
     url: https://tile.openstreetmap.org/{z}/{x}/{y}.png
     attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+  # Dummy: semua proses sync-execute. Manager TinyDB menyimpan processor di atribut bersama,
+  # sehingga request bersamaan di worker gevent bisa saling tertukar hasilnya (pygeoapi 0.24).
   manager:
-    name: TinyDB
-    connection: /tmp/pygeoapi-process-manager.db
-    output_dir: /tmp/
+    name: Dummy
+    connection: null
+    output_dir: null
 
 logging:
   level: ERROR
@@ -127,16 +129,16 @@ resources:
         table: sekat
         id_field: id
         geom_field: geom
-        options: {zoom: {min: 10, max: 18}}
+        options: {zoom: {min: 7, max: 18}}
   hotspot:
     type: collection
-    title: Hotspot Jan–Sep 2026
-    description: Titik panas MODIS & VIIRS (gabungan FIRMS dan SiPongi). Filter waktu dengan parameter datetime.
+    title: Hotspot 2015–2026
+    description: Titik panas MODIS & VIIRS (FIRMS, SiPongi; 2015–2023 dari impor per KHG). Filter waktu dengan parameter datetime.
     keywords: [hotspot, karhutla]
     links: *link
     extents:
       <<: *ext
-      temporal: {begin: 2026-01-01T00:00:00Z, end: 2026-09-15T23:59:59Z}
+      temporal: {begin: 2015-01-01T00:00:00Z, end: 2026-12-31T23:59:59Z}
     providers:
       - {type: feature, name: PostgreSQL, data: *db_baca, table: hotspot, id_field: id, geom_field: geom, time_field: waktu, crs: *crs}
       - <<: *mvt
@@ -159,7 +161,7 @@ resources:
         table: areal_terbakar
         id_field: id
         geom_field: geom
-        options: {zoom: {min: 9, max: 16}}
+        options: {zoom: {min: 7, max: 16}}
   konsesi:
     type: collection
     title: Areal konsesi / perizinan
@@ -178,6 +180,52 @@ resources:
     extents: *ext
     providers:
       - {type: feature, name: PostgreSQL, data: *db_baca, table: ketebalan_gambut, id_field: id, geom_field: geom, crs: *crs}
+  # ---- lapisan per KHG (scripts/impor_khg.sh); raster DEM & ketebalan gambut: /lapisan-data/khg_<id>/
+  unit-prioritas:
+    type: collection
+    title: Sub-KHG dan skor prioritas
+    description: Unit sub-KHG dengan skor dampak, kelayakan, urgensi (0-1), kelas dan peringkat kebutuhan intervensi.
+    keywords: [sub-KHG, prioritas]
+    links: *link
+    extents: *ext
+    providers:
+      - {type: feature, name: PostgreSQL, data: *db_baca, table: unit_prioritas, id_field: id, geom_field: geom, crs: *crs}
+  dmpg:
+    type: collection
+    title: Pembagian program DMPG / intervensi
+    description: Dissolve unit analisis usaha per program (Intervensi KLH/BPLH, Kementerian Kehutanan, Perusahaan, kolaborasi).
+    keywords: [DMPG, intervensi]
+    links: *link
+    extents: *ext
+    providers:
+      - {type: feature, name: PostgreSQL, data: *db_baca, table: dmpg, id_field: id, geom_field: geom, crs: *crs}
+  jalur-pompa:
+    type: collection
+    title: Jalur pompa
+    description: Rute air dari pompa ke lahan sasaran lewat kanal (debit, angkat, luas layanan).
+    keywords: [pompa, kanal]
+    links: *link
+    extents: *ext
+    providers:
+      - {type: feature, name: PostgreSQL, data: *db_baca, table: jalur_pompa, id_field: id, geom_field: geom, crs: *crs}
+  badan-air:
+    type: collection
+    title: Sungai dan danau (poligon)
+    description: Badan air berupa poligon.
+    keywords: [sungai, danau]
+    links: *link
+    extents: *ext
+    providers:
+      - {type: feature, name: PostgreSQL, data: *db_baca, table: badan_air, id_field: id, geom_field: geom, crs: *crs}
+  stasiun-tma:
+    type: collection
+    title: Stasiun TMA
+    description: Stasiun tinggi muka air tanah dengan bacaan terakhir dan deret harian (tmat_m positif = di bawah permukaan).
+    keywords: [TMAT, TMA]
+    links: *link
+    extents: *ext
+    providers:
+      - {type: feature, name: PostgreSQL, data: *db_baca, table: stasiun_tma, id_field: id, geom_field: geom, crs: *crs}
   unit-target-2026:
     type: collection
     title: Unit analisis tematik — 2004 desa target 2026
@@ -257,7 +305,7 @@ resources:
         table: kanal
         id_field: id
         geom_field: geom
-        options: {zoom: {min: 9, max: 17}}
+        options: {zoom: {min: 7, max: 17}}
   pompa:
     type: collection
     title: Pompa air (rencana)
@@ -332,3 +380,12 @@ resources:
   refresh-statistik:
     type: process
     processor: {name: gambut_processes.RefreshStatistik}
+  riwayat-khg:
+    type: process
+    processor: {name: gambut_processes.RiwayatKHG}
+  status-sinkron:
+    type: process
+    processor: {name: gambut_processes.StatusSinkron}
+  simulasi-pembasahan:
+    type: process
+    processor: {name: gambut_processes.SimulasiPembasahan}

@@ -37,6 +37,7 @@ GRANT USAGE ON ALL SEQUENCES IN SCHEMA peta TO gambut_edit;
 GRANT SELECT, INSERT, UPDATE ON alur.komentar, alur.ekspor_poster TO gambut_edit;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA alur TO gambut_edit;
 GRANT SELECT ON alur.perubahan, alur.komentar TO gambut_edit;   -- riwayat & diff untuk UI
+GRANT SELECT ON alur.v_riwayat TO gambut_baca;                  -- riwayat tanpa isi baris
 
 -- audit & versi: hanya lewat trigger (SECURITY DEFINER) -> editor tidak bisa memalsukan log
 ALTER FUNCTION alur.catat_perubahan() SECURITY DEFINER SET search_path = pg_catalog, public;

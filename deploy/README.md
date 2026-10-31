@@ -1,5 +1,7 @@
 # Deploy ke Hetzner Cloud (Singapura) — otomatis
 
+> Memakai **IDCloudHost** (Jakarta) atau VPS lain? Lihat [IDCLOUDHOST.md](IDCLOUDHOST.md): `bootstrap.sh` menggantikan langkah A dan `provision.sh`.
+
 Pembagian kerja:
 - **Anda:** membuat akun, membayar, dan membuat API token. Tiga langkah, ±15 menit.
 - **Skrip:** semua langkah lainnya.

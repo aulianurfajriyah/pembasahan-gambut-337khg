@@ -5,14 +5,14 @@
 -- OGC API (pygeoapi): role ogc_writer punya default  app.via = 'api'  (lihat 05_roles.sql).
 -- =====================================================================
 
--- Versi terbuka (draft/review/revisi) untuk sebuah KHG; dibuat otomatis bila belum ada
+-- Versi terbuka (draft/proses/review/revisi) untuk sebuah KHG; dibuat otomatis bila belum ada
 CREATE FUNCTION alur.versi_terbuka(p_khg int) RETURNS bigint
 LANGUAGE plpgsql AS $$
 DECLARE vid bigint;
 BEGIN
   PERFORM pg_advisory_xact_lock(hashtext('khg_versi'), p_khg);
   SELECT id INTO vid FROM alur.khg_versi
-   WHERE khg_id = p_khg AND status IN ('draft','review','revisi');
+   WHERE khg_id = p_khg AND status IN ('draft','proses','review','revisi');
   IF vid IS NULL THEN
     INSERT INTO alur.khg_versi (khg_id, nomor)
     SELECT p_khg, coalesce(max(nomor), 0) + 1 FROM alur.khg_versi WHERE khg_id = p_khg
@@ -20,6 +20,13 @@ BEGIN
   END IF;
   RETURN vid;
 END $$;
+
+-- true bila baris ikut dihitung/ditampilkan secara bawaan: bukan data varian DEM, atau data varian utama
+CREATE FUNCTION ref.varian_utama(p_khg int, p_sumber text) RETURNS boolean
+LANGUAGE sql STABLE AS $$
+  SELECT p_sumber IS NULL OR p_sumber NOT LIKE 'IMPOR_KHG:%'
+      OR EXISTS (SELECT 1 FROM ref.varian_dem v WHERE v.khg_id = p_khg AND v.utama AND v.sumber = p_sumber)
+$$;
 
 -- BEFORE INSERT/UPDATE: khg_id dari geometri (bila kosong), kolom meta, rev
 CREATE FUNCTION alur.isi_meta() RETURNS trigger
@@ -168,8 +175,8 @@ BEGIN
          diajukan_oleh = coalesce(nullif(current_setting('app.pengguna', true), ''), session_user),
          diajukan_at = now(),
          validasi = (SELECT jsonb_agg(to_jsonb(x)) FROM alur.validasi_khg(p_versi) x)
-   WHERE id = p_versi AND status IN ('draft','revisi');
-  IF NOT FOUND THEN RAISE EXCEPTION 'Versi % bukan draft/revisi', p_versi; END IF;
+   WHERE id = p_versi AND status IN ('draft','proses','revisi');
+  IF NOT FOUND THEN RAISE EXCEPTION 'Versi % bukan draft/proses/revisi', p_versi; END IF;
 END $$;
 
 CREATE FUNCTION alur.putuskan(p_versi bigint, p_keputusan text, p_catatan text DEFAULT NULL) RETURNS void
