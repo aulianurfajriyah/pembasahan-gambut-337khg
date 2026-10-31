@@ -260,7 +260,8 @@ flowchart TB
 | Environment | Machine | Notes |
 |---|---|---|
 | Local development | Apple Silicon laptop, Docker Desktop | PostGIS image runs as amd64 through Rosetta; build takes 9.4 minutes |
-| Demo (active) | Hetzner cpx22, Singapore: 2 vCPU, 4 GB RAM, 80 GB disk | EUR 0.0497 per hour, no backups, `https://5-223-68-87.sslip.io` |
+| First demo (deleted after use) | Hetzner cpx22, Singapore: 2 vCPU, 4 GB RAM, 80 GB disk | USD 0.0497 per hour, no backups |
+| Shared VM (active) | Existing Hetzner cx23, Nuremberg: 2 vCPU, 4 GB RAM, 40 GB disk, shared with other services | No extra cost; host Caddy serves `https://gambut.178-105-182-162.sslip.io`; containers capped at 1.2 GB (database) and 0.8 GB (API); `deploy/deploy_shared.sh` |
 | Recommended production | Hetzner cpx32, Singapore: 4 vCPU, 8 GB RAM, 160 GB disk | Daily Hetzner backups plus a nightly `pg_dump` kept for 7 days |
 
 Deployment is fully scripted:
@@ -337,7 +338,8 @@ Caddy access logs, container logs (`docker compose logs`) and a smoke test after
 
 | Option | Per day | Use |
 |---|---|---|
-| Hetzner cpx22 Singapore, no backup | about EUR 1.19 | Current demo |
+| Existing shared VM (Nuremberg) | no extra cost | Current deployment |
+| Hetzner cpx22 Singapore, no backup | about EUR 1.19 | Dedicated demo server |
 | Hetzner cpx32 Singapore with backup | about EUR 2.7 | Recommended production |
 | GCP Compute Engine Jakarta, self-managed | about USD 3.2 | If data must stay in Indonesia |
 | GCP Cloud SQL plus small VM, Jakarta | about USD 5.5 | Managed database |

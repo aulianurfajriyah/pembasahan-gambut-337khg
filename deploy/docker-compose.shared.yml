@@ -1,0 +1,21 @@
+# Override untuk VM bersama (sudah ada Caddy di host yang memegang port 80/443).
+# Dipakai bersama db/docker-compose.yml lewat COMPOSE_FILE di .env server (lihat deploy_shared.sh).
+# Memori dibatasi supaya layanan lain di VM tidak kehabisan RAM.
+services:
+  db:
+    platform: linux/amd64
+    ports: !override ["127.0.0.1:5433:5432"]   # hanya localhost -> editor QGIS lewat SSH tunnel
+    command: >
+      postgres -c shared_buffers=256MB -c effective_cache_size=1GB
+               -c work_mem=16MB -c maintenance_work_mem=256MB
+               -c max_wal_size=1GB -c jit=off
+    shm_size: 256mb
+    mem_limit: 1200m
+  api:
+    ports: ["127.0.0.1:5080:80"]               # Caddy host -> pygeoapi
+    environment:
+      PYGEOAPI_URL: https://${SITE_ADDRESS}
+      WSGI_WORKERS: 2
+    mem_limit: 800m
+  proxy:
+    profiles: [nonaktif]                       # diganti Caddy host (/etc/caddy/conf.d/gambut.caddy)

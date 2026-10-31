@@ -2,7 +2,7 @@
 
 ERD and Database Schema are generated from schema_snapshot.json (see introspect.sql),
 so they always match the real database. Run from anywhere:  python3 docs/en/build.py
-Needs: pandoc, Google Chrome, pdftotext (poppler).
+Needs: pandoc, Google Chrome, Python playwright, pdftotext (poppler).
 """
 import json
 import re
@@ -360,6 +360,19 @@ def check_text(name, text):
     assert not bad, f"{name}: {bad[:5]}"
 
 
+def print_pdf(html, pdf):
+    # Wait for the template's ready flag (fonts loaded, Mermaid rendered) before printing;
+    # a fixed --virtual-time-budget printed blank diagrams on newer Chrome.
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as p:
+        browser = p.chromium.launch(executable_path=CHROME)
+        page = browser.new_page()
+        page.goto(html.as_uri())
+        page.wait_for_selector("body[data-ready='1']", timeout=60000)
+        page.pdf(path=str(pdf), prefer_css_page_size=True, print_background=True)
+        browser.close()
+
+
 def main():
     (HERE / "02_ERD.md").write_text(build_erd_md())
     (HERE / "03_DATABASE_SCHEMA.md").write_text(build_schema_md())
@@ -373,9 +386,7 @@ def main():
                         "-M", f"short={short}", "-M", "kicker=Peat Rewetting Planning System",
                         "-M", f"subtitle={subtitle}", "-o", str(html)], check=True)
         pdf = OUT / f"{src.stem}.pdf"
-        subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer",
-                        "--virtual-time-budget=30000", "--run-all-compositor-stages-before-draw",
-                        f"--print-to-pdf={pdf}", html.as_uri()], check=True, capture_output=True)
+        print_pdf(html, pdf)
         text = subprocess.run(["pdftotext", str(pdf), "-"], capture_output=True, text=True).stdout
         assert "\u2014" not in text, f"{pdf.name}: em dash in PDF"
         assert "Syntax error" not in text, f"{pdf.name}: mermaid syntax error"

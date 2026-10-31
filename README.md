@@ -5,12 +5,12 @@ Basis data **PostgreSQL/PostGIS** dan layanan **OGC API** (pygeoapi) untuk aplik
 ## 🔗 Link
 | | |
 |---|---|
-| **OGC API (demo, publik, baca)** | **https://5-223-68-87.sslip.io** |
-| Dokumentasi interaktif (Swagger) | https://5-223-68-87.sslip.io/openapi?f=html |
-| Daftar layer | https://5-223-68-87.sslip.io/collections?f=html |
+| **OGC API (demo, publik, baca)** | **https://gambut.178-105-182-162.sslip.io** |
+| Dokumentasi interaktif (Swagger) | https://gambut.178-105-182-162.sslip.io/openapi?f=html |
+| Daftar layer | https://gambut.178-105-182-162.sslip.io/collections?f=html |
 | Koneksi PostgreSQL langsung | Tidak dibuka ke publik. Hanya lewat SSH tunnel dengan kredensial dari pemilik repo (lihat [docs/04](docs/04_PANDUAN_DATABASE.md)) |
 
-> Server demo bersifat **sementara** (Hetzner Singapura, dibuat 30 Sep 2026 untuk demo 1 hari). Setelah dihapus, link di atas tidak aktif lagi. Layanan bisa dibangun ulang dengan [deploy/](deploy/README.md) (±25 menit).
+> Layanan berjalan di VM Hetzner yang sudah ada (cx23 Nuremberg, dipakai bersama layanan lain, tanpa biaya tambahan; dipasang dengan [`deploy/deploy_shared.sh`](deploy/deploy_shared.sh)). Server demo pertama (Singapura, 30 Sep 2026) sudah dihapus. Untuk server tersendiri, lihat [deploy/](deploy/README.md).
 > Username/password untuk operasi tulis dan akses DB **tidak ada di repo ini**; mintalah ke pemilik repo.
 
 ## Isi basis data

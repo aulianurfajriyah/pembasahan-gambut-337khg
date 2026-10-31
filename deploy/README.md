@@ -60,7 +60,15 @@ Skrip bersifat idempoten: aman dijalankan ulang untuk update, dan tidak me-resto
 
 Opsi lain: `TYPE=cx33 LOC=nbg1 ./deploy/provision.sh` untuk Jerman (lebih murah, latensi lebih tinggi).
 
+## C2. VM yang sudah ada (dipakai bersama)
+Untuk VM yang sudah menjalankan layanan lain dan punya Caddy di host (port 80/443 sudah terpakai):
+```bash
+IP=178.105.182.162 KEY=~/.ssh/vm_hetzner ./deploy/deploy_shared.sh
+```
+Skrip ini memasang stack di `/opt/gambut` tanpa container Caddy (override [`docker-compose.shared.yml`](docker-compose.shared.yml)), membatasi memori container, menambah `/etc/caddy/conf.d/gambut.caddy` di Caddy host, lalu menjalankan uji asap. DB hanya di `127.0.0.1:5433` (akses lewat SSH tunnel). Kredensial tersalin ke `deploy/.env.shared` dan `docs/KREDENSIAL_PRODUKSI.md` (keduanya di-gitignore).
+
 ## D. Riwayat deploy
 | Tanggal | Server | Hasil |
 |---|---|---|
-| 30 Sep 2026 | `gambut-prod` cpx22 Singapura, 5.223.68.87, €0,0497/jam | Deploy ±25 menit (sebagian besar upload dump 3,3 GB). Tes lolos. API: https://5-223-68-87.sslip.io. RAM terpakai ±1,8/3,8 GB, disk 18/75 GB |
+| 30 Sep 2026 | `gambut-prod` cpx22 Singapura, 5.223.68.87, €0,0497/jam | Deploy ±25 menit (sebagian besar upload dump 3,3 GB). Tes lolos. RAM terpakai ±1,8/3,8 GB, disk 18/75 GB. Server dihapus setelah demo |
+| 31 Okt 2026 | VM bersama `twin-vm` cx23 Nuremberg, 178.105.182.162, tanpa biaya tambahan | `deploy_shared.sh` ±10 menit (upload ±30 MB/s). Tes lolos, 19 koleksi, tiles, processes, tulis dengan login, tunnel DB. API: https://gambut.178-105-182-162.sslip.io. Container dibatasi 1,2 GB (DB) + 0,8 GB (API); disk VM sisa ±10 GB |
