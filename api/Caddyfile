@@ -33,6 +33,21 @@
 			}
 		}
 
+		# ubin MVT peta web dari Martin (api/martin.yaml); hanya layer & zoom yang dipakai web (minzoom di LH-KHG
+		# khg-layers.ts): ubin zoom rendah kanal/sekat/areal terbakar butuh 4-20 dtk CPU. Ubin pygeoapi
+		# (/collections/*/tiles) tetap ada untuk klien OGC dan sebagai jalur rollback web
+		handle_path /tiles/* {
+			@layer path_regexp ^/(khg/1?\d|hotspot/([5-9]|1\d)|(kanal|sekat|areal_terbakar)/([7-9]|1\d))/\d+/\d+$
+			handle @layer {
+				header Cache-Control "public, max-age=60"
+				@khg path /khg/*
+				uri @khg replace /khg/ /khg_ubin/ 1
+				reverse_proxy martin:3000
+			}
+			handle {
+				respond 404
+			}
+		}
 		@proses_baca {
 			method POST
 			path_regexp ^/processes/(ringkasan-dashboard|validasi-khg|saran-lokasi-pompa|riwayat-khg|status-sinkron|simulasi-pembasahan)/execution$

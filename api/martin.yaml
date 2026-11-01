@@ -1,0 +1,17 @@
+# Martin: tile server MVT untuk peta web (jauh lebih cepat dari ubin pygeoapi untuk poligon besar seperti KHG).
+# Semua view schema api terbit otomatis (id sumber = nama view); Caddy hanya meneruskan /tiles/<layer peta web>.
+# Tanpa cache di Martin: tile harus segar setelah edit sekat/kanal. Cache browser diatur Caddy (Cache-Control).
+listen_addresses: 0.0.0.0:3000
+cache_size_mb: 0
+postgres:
+  connection_string: ${DATABASE_URL}
+  pool_size: 8
+  auto_bounds: skip   # bounds tidak dipakai web; menghitungnya saat start membebani DB (timeout di view besar)
+  auto_publish:
+    from_schemas: api
+    tables: true
+    functions: false
+  functions:
+    khg_ubin:   # ubin KHG dengan batas disederhanakan di zoom rendah; Caddy: /tiles/khg -> /khg_ubin
+      schema: api
+      function: khg_ubin

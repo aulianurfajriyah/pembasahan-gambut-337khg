@@ -27,6 +27,8 @@ CREATE UNIQUE INDEX ON api.khg_statistik (khg_id);
 
 -- KHG: batas + status alur + statistik + skor prioritas (layar Dashboard & Daftar KHG)
 -- penyederhanaan: skor_prioritas = 100 x (0.4 porsi terbakar + 0.3 porsi gambut >= 3 m + 0.3 hotspot 30h relatif)
+-- hotspot maksimum lewat subquery, bukan window max() OVER (): window menghalangi filter (bbox ubin, id) turun ke
+-- ref.khg, sehingga setiap request menghitung ke-866 KHG
 CREATE VIEW api.khg AS
 SELECT k.id, k.kode, k.nama, p.nama AS provinsi, p.singkatan AS provinsi_singkat, k.target_2026, k.luas_ha,
        st.nomor AS versi, st.status, st.diajukan_oleh, st.diajukan_at, st.reviewer, st.diputuskan_at,
@@ -44,7 +46,7 @@ SELECT k.id, k.kode, k.nama, p.nama AS provinsi, p.singkatan AS provinsi_singkat
            AND coalesce(c.sumber, '') NOT LIKE 'IMPOR_KHG:%') AS kanal_aktif_km,
        s.porsi_pernah_terbakar, s.porsi_gambut_dalam,
        round(100 * (0.4 * coalesce(s.porsi_pernah_terbakar, 0) + 0.3 * coalesce(s.porsi_gambut_dalam, 0)
-                  + 0.3 * coalesce(s.hotspot_30h::numeric / nullif(max(s.hotspot_30h) OVER (), 0), 0)))::int AS skor_prioritas,
+                  + 0.3 * coalesce(s.hotspot_30h::numeric / nullif((SELECT max(hotspot_30h) FROM api.khg_statistik), 0), 0)))::int AS skor_prioritas,
        k.geom,
        -- bbox terpisah agar klien bisa memusatkan peta tanpa mengunduh seluruh batas KHG
        ST_XMin(k.geom) AS bbox_xmin, ST_YMin(k.geom) AS bbox_ymin,
@@ -55,6 +57,32 @@ SELECT k.id, k.kode, k.nama, p.nama AS provinsi, p.singkatan AS provinsi_singkat
   JOIN ref.provinsi p ON p.id = k.provinsi_utama_id
   LEFT JOIN alur.v_khg_status st ON st.khg_id = k.id
   LEFT JOIN api.khg_statistik s ON s.khg_id = k.id;
+
+-- KHG tanpa batas poligon (49 MB) untuk daftar/tabel/dashboard: pygeoapi tetap membaca kolom geometri walau
+-- skipGeometry=true, jadi geometri diganti titik tengah bbox
+CREATE VIEW api.khg_ringkas AS
+SELECT id, kode, nama, provinsi, provinsi_singkat, target_2026, luas_ha, versi, status, diajukan_oleh, diajukan_at,
+       reviewer, diputuskan_at, hotspot_30h, hotspot_tahun_ini, kanal_km, sekat_rencana, sekat_existing, sekat_final,
+       pintu_air, pompa, kanal_aktif_km, porsi_pernah_terbakar, porsi_gambut_dalam, skor_prioritas,
+       bbox_xmin, bbox_ymin, bbox_xmax, bbox_ymax, kanal_terpilih_km,
+       ST_SetSRID(ST_MakePoint((bbox_xmin + bbox_xmax) / 2, (bbox_ymin + bbox_ymax) / 2), 4326)::geometry(Point, 4326) AS geom
+  FROM api.khg;
+
+-- ubin MVT KHG untuk peta web (Martin sumber khg_ubin, Caddy /tiles/khg). Zoom < 8 memakai batas disederhanakan
+-- (lebih kecil dari 1 piksel ubin di zoom itu), zoom >= 8 batas asli. Atribut = api.khg tanpa geometri & bbox.
+CREATE FUNCTION api.khg_ubin(z integer, x integer, y integer) RETURNS bytea
+LANGUAGE sql STABLE PARALLEL SAFE AS $$
+SELECT ST_AsMVT(t, 'khg', 4096, 'geom') FROM (
+  SELECT ST_AsMVTGeom(ST_Transform(CASE WHEN z < 8 THEN k.geom_sederhana ELSE k.geom END, 3857),
+                      ST_TileEnvelope(z, x, y), 4096, 64, true) AS geom,
+         a.id, a.kode, a.nama, a.provinsi, a.provinsi_singkat, a.target_2026, a.luas_ha, a.versi, a.status,
+         a.diajukan_oleh, a.diajukan_at, a.reviewer, a.diputuskan_at, a.hotspot_30h, a.hotspot_tahun_ini, a.kanal_km,
+         a.sekat_rencana, a.sekat_existing, a.sekat_final, a.pintu_air, a.pompa, a.kanal_aktif_km,
+         a.porsi_pernah_terbakar, a.porsi_gambut_dalam, a.skor_prioritas, a.kanal_terpilih_km
+    FROM ref.khg k JOIN api.khg a ON a.id = k.id
+   WHERE k.geom && ST_Transform(ST_TileEnvelope(z, x, y, margin => 64.0 / 4096), 4326)
+) t
+$$;
 
 CREATE VIEW api.desa AS
 SELECT d.id, d.kode_bps, d.nama AS desa, kc.nama AS kecamatan, kb.nama AS kabupaten, p.nama AS provinsi,

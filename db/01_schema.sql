@@ -71,7 +71,9 @@ CREATE TABLE ref.khg (
   provinsi_utama_id smallint NOT NULL REFERENCES ref.provinsi,
   target_2026       boolean NOT NULL DEFAULT false,  -- KHG di 2004 desa target (345 KHG)
   luas_ha           numeric(12,2),
-  geom              geometry(MultiPolygon,4326)      -- dissolve unit analisis nasional
+  geom              geometry(MultiPolygon,4326),     -- dissolve unit analisis nasional
+  -- batas disederhanakan ±50 m (3,2 juta -> ±150 ribu titik) untuk ubin peta zoom < 8 (api.khg_ubin)
+  geom_sederhana    geometry GENERATED ALWAYS AS (ST_SimplifyPreserveTopology(geom, 0.0005)) STORED
 );
 CREATE INDEX ON ref.khg USING gist (geom);
 

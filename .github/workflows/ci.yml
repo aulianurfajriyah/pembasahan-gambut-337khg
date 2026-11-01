@@ -100,9 +100,15 @@ jobs:
             "$(grep -o 'geopython/pygeoapi:[^ ]*' db/docker-compose.yml)"
       - name: uji asap API
         run: db/ci/smoke_api.sh http://localhost:5098
-      - name: log pygeoapi (bila gagal)
+      - name: martin (ubin MVT peta web)
+        run: |
+          docker run -d --name martin --network host -e DATABASE_URL=postgresql://ogc_reader:ci_r@localhost:5432/gambut \
+            -v "$PWD/api/martin.yaml:/config.yaml:ro" "$(grep -o 'ghcr.io/maplibre/martin:[^ ]*' db/docker-compose.yml)" --config /config.yaml
+          for _ in $(seq 30); do curl -sf -o /dev/null localhost:3000/health && break; sleep 1; done
+          for l in khg khg_ubin kanal sekat hotspot areal_terbakar; do curl -sf -o /dev/null "localhost:3000/$l/0/0/0" || exit 1; echo "ok: $l"; done
+      - name: log pygeoapi/martin (bila gagal)
         if: failure()
-        run: docker logs api 2>&1 | tail -100
+        run: docker logs api 2>&1 | tail -100; docker logs martin 2>&1 | tail -30
 
   aturan:
     if: github.event_name == 'pull_request'
