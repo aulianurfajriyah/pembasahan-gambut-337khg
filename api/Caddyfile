@@ -40,6 +40,8 @@
 			@layer path_regexp ^/(khg/1?\d|hotspot/([5-9]|1\d)|(kanal|sekat|areal_terbakar)/([7-9]|1\d))/\d+/\d+$
 			handle @layer {
 				header Cache-Control "public, max-age=60"
+				@khg path /khg/*
+				uri @khg replace /khg/ /khg_ubin/ 1
 				reverse_proxy martin:3000
 			}
 			handle {

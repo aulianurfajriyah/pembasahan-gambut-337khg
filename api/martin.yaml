@@ -11,3 +11,7 @@ postgres:
     from_schemas: api
     tables: true
     functions: false
+  functions:
+    khg_ubin:   # ubin KHG dengan batas disederhanakan di zoom rendah; Caddy: /tiles/khg -> /khg_ubin
+      schema: api
+      function: khg_ubin
