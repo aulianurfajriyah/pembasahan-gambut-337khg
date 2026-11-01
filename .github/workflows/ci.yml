@@ -1,0 +1,121 @@
+# CI BE + DB: tiap push ke main dan tiap PR.
+#   lint    shell, python, JSON, compose, Caddyfile
+#   db-api  build skema baru (01-03, 09, 10) + seed uji -> tests.sql -> pygeoapi -> uji asap semua koleksi/proses
+#   aturan  PR yang menambah db/migrations/* juga harus mengubah 01-03 / 10 (build baru tanpa migrasi)
+# Tidak memakai data asli (20 GB, tidak ada di repo): db/ci/seed.sql berisi satu KHG uji.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: git ls-files -z '*.sh' | xargs -0 shellcheck -S warning
+      - name: python (sintaks)
+        run: git ls-files -z '*.py' | xargs -0 python3 -m py_compile
+      - name: JSON
+        run: |
+          for f in $(git ls-files '*.json'); do python3 -m json.tool "$f" >/dev/null || { echo "JSON rusak: $f"; exit 1; }; done
+      - name: docker compose (semua kombinasi deploy)
+        env:
+          SITE_ADDRESS: ci.local
+          WEB_ADDRESS: app.ci.local
+          POSTGRES_PASSWORD: x
+          PW_OGC_READER: x
+          PW_OGC_WRITER: x
+          PW_WEB_APP: x
+          PW_EDITOR_QGIS: x
+          API_ADMIN_USER: admin
+          API_ADMIN_HASH: x
+          BASEMAP_STYLE_URL: https://tiles.openfreemap.org/styles/positron
+        run: |
+          for c in "" deploy/docker-compose.prod.yml "deploy/docker-compose.prod.yml deploy/docker-compose.web.yml" deploy/docker-compose.shared.yml; do
+            args=(-f db/docker-compose.yml); for f in $c; do args+=(-f "$f"); done
+            docker compose "${args[@]}" config -q && echo "ok: ${args[*]}"
+          done
+      - name: Caddyfile
+        run: |
+          hash=$(docker run --rm caddy:2 caddy hash-password --plaintext ci)
+          docker run --rm -e SITE_ADDRESS=ci.local -e API_ADMIN_USER=admin -e API_ADMIN_HASH="$hash" \
+            -v "$PWD/api/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2 caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile
+          docker run --rm -e WEB_ADDRESS=app.ci.local \
+            -v "$PWD/deploy/Caddyfile.web:/etc/caddy/Caddyfile:ro" caddy:2 caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile
+
+  db-api:
+    runs-on: ubuntu-24.04
+    services:
+      db:
+        image: postgis/postgis:17-3.5   # sama dengan db/docker-compose.yml
+        env:
+          POSTGRES_DB: gambut
+          POSTGRES_PASSWORD: ci
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U postgres -d gambut" --health-interval 5s --health-retries 20
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: ci
+      PGDATABASE: gambut
+      PGOPTIONS: -c client_min_messages=warning
+    steps:
+      - uses: actions/checkout@v4
+      - name: skema baru (01-03, role, view API)
+        working-directory: db
+        run: |
+          P="psql -X -q -v ON_ERROR_STOP=1"
+          for f in 01_schema.sql 02_trigger_fungsi.sql 03_views.sql; do echo "== $f"; $P -f $f; done
+          $P -v pw_reader=ci_r -v pw_writer=ci_w -v pw_web=ci_b -v pw_editor=ci_e -f 09_roles.sql >/dev/null
+          $P -f 10_api_views.sql
+          PSQL="$P" ./migrasi.sh --tandai
+          PSQL="$P" ./migrasi.sh
+      - name: tests.sql (CRUD, audit, alur versi)
+        working-directory: db
+        run: |
+          psql -X -q -v ON_ERROR_STOP=1 -f ci/seed.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests.sql | tee /tmp/tests.out
+          grep -q 'SEMUA TES LOLOS' /tmp/tests.out
+      - name: pygeoapi
+        run: |
+          docker run -d --name api --network host \
+            -e PYGEOAPI_CONFIG=/pygeoapi/local.config.yml -e PYGEOAPI_OPENAPI=/tmp/local.openapi.yml \
+            -e PYGEOAPI_URL=http://localhost:5098 -e PYTHONPATH=/plugins -e WSGI_WORKERS=1 -e CONTAINER_PORT=5098 \
+            -e PG_HOST=localhost -e PG_PORT=5432 -e PG_DB=gambut -e PW_OGC_READER=ci_r -e PW_OGC_WRITER=ci_w \
+            -v "$PWD/api/pygeoapi-config.yml:/pygeoapi/local.config.yml:ro" \
+            -v "$PWD/api/gambut_processes.py:/plugins/gambut_processes.py:ro" \
+            -v "$PWD/api/simulasi_model.py:/plugins/simulasi_model.py:ro" \
+            -v "$PWD/simulasi:/simulasi" \
+            "$(grep -o 'geopython/pygeoapi:[^ ]*' db/docker-compose.yml)"
+      - name: uji asap API
+        run: db/ci/smoke_api.sh http://localhost:5098
+      - name: log pygeoapi (bila gagal)
+        if: failure()
+        run: docker logs api 2>&1 | tail -100
+
+  aturan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: migrasi baru juga dilipat ke 01-03 / 10
+        run: |
+          base=origin/${{ github.base_ref }}
+          baru=$(git diff --name-only --diff-filter=A "$base"...HEAD -- db/migrations)
+          [ -z "$baru" ] && { echo "tidak ada migrasi baru"; exit 0; }
+          echo "migrasi baru: $baru"
+          git diff --name-only "$base"...HEAD -- db/01_schema.sql db/02_trigger_fungsi.sql db/03_views.sql db/10_api_views.sql | grep -q . || {
+            echo "::error::Migrasi baru harus juga ditulis di db/01-03 atau db/10_api_views.sql (build baru tidak menjalankan migrasi)"; exit 1; }

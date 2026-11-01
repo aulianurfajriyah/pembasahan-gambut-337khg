@@ -45,6 +45,7 @@ if ! hcloud server describe "$NAME" >/dev/null 2>&1; then
     [ "$ok" = "ya" ] || { echo "dibatalkan"; exit 1; }
   fi
   UD=$(mktemp); sed "s|\${SSH_PUBKEY}|$(cat "$KEY.pub")|" cloud-init.yml > "$UD"
+  # shellcheck disable=SC2046  # flag opsional: kosong bila BACKUP=0
   hcloud server create --name "$NAME" --type "$TYPE" --location "$LOC" --image "$IMAGE" \
     --ssh-key gambut-deploy --firewall gambut-fw --user-data-from-file "$UD" \
     --label app=gambut $([ "${BACKUP:-0}" = 1 ] && echo --enable-backup)

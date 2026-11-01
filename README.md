@@ -92,6 +92,15 @@ docs/     01..06 dokumentasi
 scripts/  build_gpkg.py (sekat), build_hotspot.py (hotspot)
 ```
 
+## Alur kerja tim & CI
+- Kerjakan di branch (`fitur/...`, `fix/...`), buka PR ke `main`, merge setelah CI hijau. Jangan push langsung ke `main`.
+- CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) berjalan di setiap PR dan push ke `main`:
+  - **lint**: shellcheck, sintaks Python, JSON, semua kombinasi `docker compose`, dan Caddyfile.
+  - **db-api**: membangun skema baru (01–03, 09, 10), mengisi data uji [db/ci/seed.sql](db/ci/seed.sql), menjalankan `tests.sql`, menyalakan pygeoapi, lalu menguji semua koleksi, proses, dan satu operasi tulis ([db/ci/smoke_api.sh](db/ci/smoke_api.sh)).
+  - **aturan**: PR yang menambah `db/migrations/*` juga harus mengubah 01–03 atau `10_api_views.sql`.
+- Perubahan skema: tambah migrasi baru dan lipat perubahannya ke 01–03/10. Pasang dengan `db/migrasi.sh` (lihat [docs/07](docs/07_PANDUAN_IMPOR.md)).
+- Uji lokal sebelum PR: `shellcheck -S warning $(git ls-files '*.sh')`, lalu `psql -f db/tests.sql` di DB lokal.
+
 ## Catatan & keterbatasan
 - **Belum ada datanya** (struktur sudah siap): sungai sumber air, status kanal aktif hasil survei, pompa, logger TMAT, posko, sumur bor, dan kode KHG resmi. Lihat [docs/02](docs/02_KECOCOKAN_UI.md).
 - **Hotspot antar-bulan tidak sebanding**: Jan/Apr/Agu/Sep hanya MODIS, sedangkan Feb–Jul juga VIIRS.
