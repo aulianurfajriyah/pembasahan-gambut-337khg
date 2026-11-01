@@ -154,7 +154,17 @@ def muka_air_kanal(g, p, sel, nomor):
 
 def muka_air_tanah(g, p, dalam_kanal):
     alami = p['muka_air_alami_m']
-    return alami + (dalam_kanal[g['dekat_d']] - alami) * np.exp(-g['jarak_d'] / p['jarak_pengaruh_m'])
+    return alami + (dalam_kanal[g['dekat_d']] - alami) * redaman(g, p['jarak_pengaruh_m'])
+
+
+def redaman(g, jarak_pengaruh_m):
+    """exp(-jarak / L) tiap sel lahan; satu simulasi memakai 3 nilai L untuk 11 panggilan, jadi disimpan per grid."""
+    simpan = g.setdefault('redaman', {})
+    if jarak_pengaruh_m not in simpan:
+        if len(simpan) >= 6:   # ponytail: batas kasar memori (13 MB per L untuk 3 juta sel)
+            simpan.clear()
+        simpan[jarak_pengaruh_m] = np.exp(-g['jarak_d'] / jarak_pengaruh_m)
+    return simpan[jarak_pengaruh_m]
 
 
 def png(indeks, palet):
@@ -173,9 +183,17 @@ def png(indeks, palet):
     return 'data:image/png;base64,' + base64.b64encode(data).decode()
 
 
+def digitize1(nilai, batas):
+    """= (np.digitize(nilai, batas) + 1) sebagai uint8, ±3x lebih cepat untuk batas sedikit (tanpa NaN)."""
+    kelas = np.ones(nilai.shape, 'uint8')
+    for b in np.asarray(batas, 'float64').reshape(-1, 1):   # batas float64 seperti digitize
+        kelas += nilai >= b
+    return kelas
+
+
 def gambar(g, nilai, batas, palet, kosongkan_di_bawah=None):
     r0, r1, c0, c1 = g['meta']['jendela']
-    kelas = (np.digitize(nilai, batas) + 1).astype('uint8')
+    kelas = digitize1(nilai, batas)
     if kosongkan_di_bawah is not None:
         kelas[nilai < kosongkan_di_bawah] = 0
         kelas[kelas > 0] -= 1
@@ -360,3 +378,9 @@ def jalankan(khg_id, sekat, skenario='final', masukan=None, biaya_per_sekat=None
         },
         'alur': {'type': 'FeatureCollection', 'features': alur},
     }
+
+
+if __name__ == '__main__':   # cek cepat: python3 api/simulasi_model.py
+    x = np.concatenate([np.random.default_rng(0).normal(0.4, 0.4, 100000), BATAS_DALAM]).astype('float32')
+    assert np.array_equal(digitize1(x, BATAS_DALAM), (np.digitize(x, BATAS_DALAM) + 1).astype('uint8'))
+    print('ok')

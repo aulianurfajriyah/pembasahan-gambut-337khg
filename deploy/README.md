@@ -92,3 +92,16 @@ ssh -i ~/.ssh/gambut_vps gambut@<IP> 'cd /srv/gambut/db && docker tag db-web:rol
 ssh -i ~/.ssh/gambut_vps gambut@<IP> 'cd /srv/gambut && tar xzf /srv/backup/rollback_tiles.tgz && cd db && docker compose rm -sf martin && docker compose up -d --force-recreate api proxy'
 ```
 Setelah itu revert PR di kedua repo (BE dan LH-KHG) supaya deploy berikutnya tidak memasang ulang perubahan ini.
+
+## F. Performa BE/DB (2 Nov 2026) dan rollback
+Perubahan: migrasi `db/migrations/2026-11-02_perf_query.sql` (fungsi `ref.varian_utama` bisa di-inline, bbox KHG tersimpan di `ref.khg`, ubin `api.khg_ubin` hanya membawa atribut yang dipakai web, dashboard satu kali scan kanal, extension `pg_stat_statements`), cache hasil dashboard (30 dtk) dan simulasi (6 hasil per worker) di `api/gambut_processes.py`, worker pygeoapi `gthread` 4 thread, dan setelan Postgres baru (`random_page_cost`, `pg_stat_statements`, log query > 500 ms). Tanpa perubahan data.
+
+Urutan deploy (piecewise, jangan `deploy.sh`):
+1. Backup definisi skema: `docker exec gambut_db pg_dump -U postgres -d gambut --schema-only -Fc > /srv/backup/skema_sebelum_perf.dump`, dan `tar czf /srv/backup/rollback_perf.tgz api db/docker-compose.yml deploy/docker-compose.prod.yml`.
+2. rsync `api/`, `db/` (tanpa `.env`), `deploy/docker-compose.prod.yml`.
+3. `PSQL="docker exec -i gambut_db psql -X -q -U postgres -d gambut -v ON_ERROR_STOP=1" db/migrasi.sh` (ALTER `ref.khg` mengunci tabel beberapa detik).
+4. `docker compose up -d db api martin proxy` (db restart ±10 dtk untuk `shared_preload_libraries`).
+
+Query lambat setelahnya: `SELECT calls, round(mean_exec_time) AS ms, left(query, 120) FROM pg_stat_statements ORDER BY total_exec_time DESC LIMIT 20;`
+
+**Rollback.** Kembalikan berkas lama lalu recreate container: `tar xzf /srv/backup/rollback_perf.tgz && cd db && docker compose up -d --force-recreate db api proxy`. Fungsi, view, dan kolom bbox baru tidak perlu dihapus: hasilnya sama dengan versi lama. Bila tetap ingin skema lama, pasang ulang definisi `ref.varian_utama`, `api.khg`, `api.khg_ubin`, `alur.v_dashboard` dari commit sebelum PR ini.

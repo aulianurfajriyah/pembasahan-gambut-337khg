@@ -7,6 +7,7 @@
 -- Semua geometri EPSG:4326, PK bigint identity (aman untuk QGIS).
 -- =====================================================================
 CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;   -- query lambat: SELECT * FROM pg_stat_statements
 CREATE SCHEMA IF NOT EXISTS ref;
 CREATE SCHEMA IF NOT EXISTS peta;
 CREATE SCHEMA IF NOT EXISTS alur;
@@ -73,7 +74,12 @@ CREATE TABLE ref.khg (
   luas_ha           numeric(12,2),
   geom              geometry(MultiPolygon,4326),     -- dissolve unit analisis nasional
   -- batas disederhanakan ±50 m (3,2 juta -> ±150 ribu titik) untuk ubin peta zoom < 8 (api.khg_ubin)
-  geom_sederhana    geometry GENERATED ALWAYS AS (ST_SimplifyPreserveTopology(geom, 0.0005)) STORED
+  geom_sederhana    geometry GENERATED ALWAYS AS (ST_SimplifyPreserveTopology(geom, 0.0005)) STORED,
+  -- bbox tersimpan: daftar & detail KHG (api.khg) tidak perlu membaca seluruh batas
+  bbox_xmin         double precision GENERATED ALWAYS AS (ST_XMin(geom)) STORED,
+  bbox_ymin         double precision GENERATED ALWAYS AS (ST_YMin(geom)) STORED,
+  bbox_xmax         double precision GENERATED ALWAYS AS (ST_XMax(geom)) STORED,
+  bbox_ymax         double precision GENERATED ALWAYS AS (ST_YMax(geom)) STORED
 );
 CREATE INDEX ON ref.khg USING gist (geom);
 

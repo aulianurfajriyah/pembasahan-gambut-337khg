@@ -11,6 +11,8 @@ services:
     command: >
       postgres -c shared_buffers=1GB -c work_mem=64MB -c maintenance_work_mem=1GB
                -c max_wal_size=4GB -c effective_cache_size=4GB -c jit=off
+               -c random_page_cost=1.1 -c effective_io_concurrency=200
+               -c shared_preload_libraries=pg_stat_statements -c log_min_duration_statement=500
     shm_size: 1gb
     ports: ["5433:5432"]
     volumes: ["pgdata:/var/lib/postgresql/data"]
@@ -26,6 +28,10 @@ services:
       PYGEOAPI_URL: ${PYGEOAPI_URL:-http://localhost:8080}
       PYTHONPATH: /plugins
       WSGI_WORKERS: ${WSGI_WORKERS:-4}
+      # bawaan image = gevent, padahal psycopg2 memblok: satu query lambat menahan semua request di worker itu.
+      # gthread: tiap worker 4 thread; psycopg2 & numpy melepas GIL saat bekerja
+      WSGI_WORKER_CLASS: gthread
+      GUNICORN_CMD_ARGS: --threads 4
       PG_HOST: db
       PG_PORT: "5432"
       PG_DB: gambut

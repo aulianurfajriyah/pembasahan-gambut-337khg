@@ -21,11 +21,15 @@ BEGIN
   RETURN vid;
 END $$;
 
--- true bila baris ikut dihitung/ditampilkan secara bawaan: bukan data varian DEM, atau data varian utama
+-- true bila baris ikut dihitung/ditampilkan secara bawaan: bukan data varian DEM, atau data varian utama.
+-- Tanpa subquery agar planner meng-inline-nya; EXISTS hanya jalan untuk baris impor varian (IMPOR_KHG:*)
+CREATE FUNCTION ref.varian_utama_impor(p_khg int, p_sumber text) RETURNS boolean
+LANGUAGE sql STABLE AS $$
+  SELECT EXISTS (SELECT 1 FROM ref.varian_dem v WHERE v.khg_id = p_khg AND v.utama AND v.sumber = p_sumber)
+$$;
 CREATE FUNCTION ref.varian_utama(p_khg int, p_sumber text) RETURNS boolean
 LANGUAGE sql STABLE AS $$
-  SELECT p_sumber IS NULL OR p_sumber NOT LIKE 'IMPOR_KHG:%'
-      OR EXISTS (SELECT 1 FROM ref.varian_dem v WHERE v.khg_id = p_khg AND v.utama AND v.sumber = p_sumber)
+  SELECT p_sumber IS NULL OR p_sumber NOT LIKE 'IMPOR_KHG:%' OR ref.varian_utama_impor(p_khg, p_sumber)
 $$;
 
 -- BEFORE INSERT/UPDATE: khg_id dari geometri (bila kosong), kolom meta, rev
