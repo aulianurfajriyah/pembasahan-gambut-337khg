@@ -33,7 +33,8 @@ Langkah yang dijalankan skrip:
    `analisis`, `alur`, dan `api` dihapus, lalu dump di-restore.
 4. Semua migrasi ditandai sudah terpasang (`db/migrasi.sh --tandai`). Role dan view API dipasang ulang.
    Password di VM tidak berubah.
-5. Isi `lapisan/` dan `simulasi/data/` disinkron ke VM. Berkas di VM yang tidak ada di laptop dihapus.
+5. Isi `lapisan/` dan `simulasi/data/` disinkron ke VM. Berkas di VM yang tidak ada di laptop dihapus. Folder yang
+   kosong di laptop dilewati, jadi isinya di VM tetap aman.
 6. `VACUUM (ANALYZE)` membuat statistik planner (tidak ikut di dump). API dinyalakan lagi, statistik
    dashboard disegarkan, lalu dicek dengan satu request.
 
