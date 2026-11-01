@@ -33,6 +33,18 @@
 			}
 		}
 
+		# ubin MVT peta web dari Martin (api/martin.yaml); hanya layer yang dipakai web. Ubin pygeoapi
+		# (/collections/*/tiles) tetap ada untuk klien OGC dan sebagai jalur rollback web
+		handle_path /tiles/* {
+			@layer path_regexp ^/(khg|kanal|sekat|hotspot|areal_terbakar)/\d+/\d+/\d+$
+			handle @layer {
+				header Cache-Control "public, max-age=60"
+				reverse_proxy martin:3000
+			}
+			handle {
+				respond 404
+			}
+		}
 		@proses_baca {
 			method POST
 			path_regexp ^/processes/(ringkasan-dashboard|validasi-khg|saran-lokasi-pompa|riwayat-khg|status-sinkron|simulasi-pembasahan)/execution$

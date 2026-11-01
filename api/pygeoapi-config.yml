@@ -106,6 +106,15 @@ resources:
         id_field: id
         geom_field: geom
         options: {zoom: {min: 0, max: 14}}
+  khg-ringkas:
+    type: collection
+    title: KHG (ringkas, tanpa batas)
+    description: Atribut sama dengan koleksi khg, geometri diganti titik tengah bbox. Untuk daftar, tabel, dan dashboard (jauh lebih ringan).
+    keywords: [KHG, ringkas]
+    links: *link
+    extents: *ext
+    providers:
+      - {type: feature, name: PostgreSQL, data: *db_baca, table: khg_ringkas, id_field: id, geom_field: geom, crs: *crs}
   desa:
     type: collection
     title: Desa target pemulihan ekosistem gambut 2026

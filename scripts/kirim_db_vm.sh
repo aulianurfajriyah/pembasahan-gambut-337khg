@@ -50,7 +50,7 @@ $SSH "$VPSQL -tA" <<'SQL'
 SELECT api.refresh_statistik() \g /dev/null
 SELECT 'VM -> KHG: ' || count(*) || ', DB ' || pg_size_pretty(pg_database_size('gambut')) FROM ref.khg;
 SQL
-$SSH 'cd /srv/gambut/db && docker compose start api >/dev/null'
+$SSH 'cd /srv/gambut/db && docker compose start api >/dev/null && docker compose restart martin >/dev/null'   # martin membaca daftar view saat start
 B="https://${DOMAIN:-$(echo "$IP" | tr . -).sslip.io}"
 for _ in $(seq 30); do curl -sf -o /dev/null "$B/collections/khg/items?limit=1&f=json" && break; sleep 2; done
 curl -s -o /dev/null -w "   GET $B/collections/khg/items -> %{http_code}\n" "$B/collections/khg/items?limit=1&f=json"

@@ -38,10 +38,20 @@ services:
       - ../simulasi:/simulasi
     restart: unless-stopped
 
+  martin:         # ubin MVT cepat untuk peta web (api/martin.yaml), lewat Caddy /tiles/*
+    image: ghcr.io/maplibre/martin:1.15.0
+    container_name: gambut_martin
+    depends_on: [db]
+    command: ["--config", "/config.yaml"]
+    environment:
+      DATABASE_URL: postgresql://ogc_reader:${PW_OGC_READER}@db:5432/gambut
+    volumes: ["../api/martin.yaml:/config.yaml:ro"]
+    restart: unless-stopped
+
   proxy:          # Caddy: GET publik, tulis wajib Basic Auth, HTTPS otomatis bila SITE_ADDRESS = domain
     image: caddy:2
     container_name: gambut_proxy
-    depends_on: [api]
+    depends_on: [api, martin]
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
       API_ADMIN_USER: ${API_ADMIN_USER}

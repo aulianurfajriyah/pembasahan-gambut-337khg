@@ -56,6 +56,16 @@ SELECT k.id, k.kode, k.nama, p.nama AS provinsi, p.singkatan AS provinsi_singkat
   LEFT JOIN alur.v_khg_status st ON st.khg_id = k.id
   LEFT JOIN api.khg_statistik s ON s.khg_id = k.id;
 
+-- KHG tanpa batas poligon (49 MB) untuk daftar/tabel/dashboard: pygeoapi tetap membaca kolom geometri walau
+-- skipGeometry=true, jadi geometri diganti titik tengah bbox
+CREATE VIEW api.khg_ringkas AS
+SELECT id, kode, nama, provinsi, provinsi_singkat, target_2026, luas_ha, versi, status, diajukan_oleh, diajukan_at,
+       reviewer, diputuskan_at, hotspot_30h, hotspot_tahun_ini, kanal_km, sekat_rencana, sekat_existing, sekat_final,
+       pintu_air, pompa, kanal_aktif_km, porsi_pernah_terbakar, porsi_gambut_dalam, skor_prioritas,
+       bbox_xmin, bbox_ymin, bbox_xmax, bbox_ymax, kanal_terpilih_km,
+       ST_SetSRID(ST_MakePoint((bbox_xmin + bbox_xmax) / 2, (bbox_ymin + bbox_ymax) / 2), 4326)::geometry(Point, 4326) AS geom
+  FROM api.khg;
+
 CREATE VIEW api.desa AS
 SELECT d.id, d.kode_bps, d.nama AS desa, kc.nama AS kecamatan, kb.nama AS kabupaten, p.nama AS provinsi,
        d.target_pemulihan_2026, d.geom

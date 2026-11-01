@@ -74,3 +74,21 @@ Skrip ini memasang stack di `/opt/gambut` tanpa container Caddy (override [`dock
 |---|---|---|
 | 30 Sep 2026 | `gambut-prod` cpx22 Singapura, 5.223.68.87, €0,0497/jam | Deploy ±25 menit (sebagian besar upload dump 3,3 GB). Tes lolos. RAM terpakai ±1,8/3,8 GB, disk 18/75 GB. Server dihapus setelah demo |
 | 31 Okt 2026 | VM bersama `twin-vm` cx23 Nuremberg, 178.105.182.162, tanpa biaya tambahan | `deploy_shared.sh` ±10 menit (upload ±30 MB/s). Tes lolos, 19 koleksi, tiles, processes, tulis dengan login, tunnel DB. API: https://gambut.178-105-182-162.sslip.io. Container dibatasi 1,2 GB (DB) + 0,8 GB (API); disk VM sisa ±10 GB |
+
+## E. Ubin Martin & koleksi khg-ringkas (1 Nov 2026) dan rollback
+Peta web mengambil ubin MVT dari Martin (`/tiles/<layer>/{z}/{x}/{y}`, [api/martin.yaml](../api/martin.yaml)), bukan dari pygeoapi. Daftar, tabel, dan dashboard KHG memakai koleksi `khg-ringkas` (tanpa batas poligon). Ubin pygeoapi dan koleksi `khg` tidak diubah, jadi web versi lama tetap jalan di BE baru.
+
+Sebelum deploy, versi lama disimpan di VM:
+- image web lama: `db-web:rollback`
+- `api/` dan `db/docker-compose.yml` lama: `/srv/backup/rollback_tiles.tgz`
+
+**Rollback cepat (±1 menit, tanpa build).** Web lama kembali memakai ubin pygeoapi dan koleksi `khg`. Martin boleh tetap jalan karena tidak dipakai.
+```bash
+ssh -i ~/.ssh/gambut_vps gambut@<IP> 'cd /srv/gambut/db && docker tag db-web:rollback db-web:latest && docker compose up -d --no-build --force-recreate web'
+```
+
+**Rollback penuh BE (opsional).** Kembalikan berkas lama, lalu hapus Martin. View `api.khg_ringkas` tidak mengganggu dan boleh tetap ada.
+```bash
+ssh -i ~/.ssh/gambut_vps gambut@<IP> 'cd /srv/gambut && tar xzf /srv/backup/rollback_tiles.tgz && cd db && docker compose rm -sf martin && docker compose up -d --force-recreate api proxy'
+```
+Setelah itu revert PR di kedua repo (BE dan LH-KHG) supaya deploy berikutnya tidak memasang ulang perubahan ini.
