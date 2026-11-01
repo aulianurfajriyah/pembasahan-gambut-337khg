@@ -91,6 +91,7 @@ DELETE FROM peta.sekat WHERE khg_id = :khg AND sumber LIKE :'pola';
 UPDATE peta.sekat SET kanal_id = NULL
  WHERE kanal_id IN (SELECT id FROM peta.kanal WHERE khg_id = :khg AND sumber LIKE :'pola');
 DELETE FROM peta.pompa WHERE khg_id = :khg AND sumber LIKE :'pola';
+DELETE FROM peta.pintu_air WHERE khg_id = :khg AND sumber LIKE :'pola';
 DELETE FROM peta.kanal WHERE khg_id = :khg AND sumber LIKE :'pola';
 DELETE FROM peta.jalur_pompa WHERE khg_id = :khg AND sumber LIKE :'pola';
 DELETE FROM peta.sungai WHERE khg_id = :khg AND sumber LIKE :'pola';
@@ -454,6 +455,7 @@ SELECT 'kanal' AS lapisan, count(*) AS jumlah, count(*) FILTER (WHERE dipilih_di
   FROM peta.kanal WHERE khg_id = :khg AND sumber = :'sumber'
 UNION ALL SELECT 'jalur pompa', count(*), NULL FROM peta.jalur_pompa WHERE khg_id = :khg AND sumber = :'sumber'
 UNION ALL SELECT 'pompa', count(*), NULL FROM peta.pompa WHERE khg_id = :khg AND sumber = :'sumber'
+UNION ALL SELECT 'pintu air', count(*), NULL FROM peta.pintu_air WHERE khg_id = :khg AND sumber = :'sumber'
 UNION ALL SELECT 'sekat', count(*), count(*) FILTER (WHERE dipilih_bangun) FROM peta.sekat WHERE khg_id = :khg AND sumber = :'sumber'
 UNION ALL SELECT 'sungai', count(*), NULL FROM peta.sungai WHERE khg_id = :khg AND sumber = :'sumber'
 UNION ALL SELECT 'badan air', count(*), NULL FROM peta.badan_air WHERE khg_id = :khg AND sumber = :'sumber'
