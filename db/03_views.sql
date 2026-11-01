@@ -72,9 +72,7 @@ SELECT
   -- data varian DEM hanya dihitung untuk varian utama (ref.varian_dem)
   (SELECT count(*) FROM peta.pompa WHERE status = 'rencana' AND ref.varian_utama(khg_id, sumber)) AS pompa_rencana,
   (SELECT count(*) FROM peta.pompa WHERE created_at >= now() - interval '7 days' AND ref.varian_utama(khg_id, sumber)) AS pompa_minggu_ini,
-  (SELECT round(coalesce(sum(panjang_m) FILTER (WHERE status = 'aktif'), 0) / 1000, 1) FROM peta.kanal
-    WHERE coalesce(sumber, '') NOT LIKE 'IMPOR_KHG:%') AS kanal_aktif_km,
-  (SELECT round(coalesce(sum(panjang_m), 0) / 1000, 1) FROM peta.kanal WHERE coalesce(sumber, '') NOT LIKE 'IMPOR_KHG:%') AS kanal_total_km,
+  kn.aktif AS kanal_aktif_km, kn.total AS kanal_total_km,
   (SELECT count(*) FROM peta.hotspot WHERE waktu >= now() - interval '30 days') AS hotspot_30h,
   (SELECT count(*) FROM peta.hotspot
     WHERE waktu >= now() - interval '60 days' AND waktu < now() - interval '30 days') AS hotspot_30h_sebelumnya,
@@ -85,7 +83,11 @@ SELECT
   (SELECT jsonb_object_agg(status, n) FROM
      (SELECT status, count(*) AS n FROM alur.v_khg_status GROUP BY 1) s) AS status_alur,
   (SELECT count(*) FROM peta.sekat WHERE dipilih_bangun AND ref.varian_utama(khg_id, sumber)) AS sekat_final,
-  (SELECT count(DISTINCT khg_id) FROM peta.sekat WHERE dipilih_bangun AND ref.varian_utama(khg_id, sumber)) AS khg_dengan_sekat_final;
+  (SELECT count(DISTINCT khg_id) FROM peta.sekat WHERE dipilih_bangun AND ref.varian_utama(khg_id, sumber)) AS khg_dengan_sekat_final
+  -- kanal (657 ribu baris) cukup satu kali scan untuk km aktif & total
+  FROM (SELECT round(coalesce(sum(panjang_m) FILTER (WHERE status = 'aktif'), 0) / 1000, 1) AS aktif,
+               round(coalesce(sum(panjang_m), 0) / 1000, 1) AS total
+          FROM peta.kanal WHERE coalesce(sumber, '') NOT LIKE 'IMPOR_KHG:%') kn;
 
 -- Panel "Layer" di Workspace Peta: jumlah fitur per layer per KHG
 CREATE VIEW peta.v_khg_legenda AS
