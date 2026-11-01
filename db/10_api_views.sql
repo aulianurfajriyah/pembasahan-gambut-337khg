@@ -38,7 +38,7 @@ SELECT k.id, k.kode, k.nama, p.nama AS provinsi, p.singkatan AS provinsi_singkat
        (SELECT count(*) FROM peta.sekat x WHERE x.khg_id = k.id AND x.status = 'existing') AS sekat_existing,
        (SELECT count(*) FROM peta.sekat x WHERE x.khg_id = k.id AND x.dipilih_bangun
            AND ref.varian_utama(k.id, x.sumber)) AS sekat_final,
-       (SELECT count(*) FROM peta.pintu_air x WHERE x.khg_id = k.id) AS pintu_air,
+       (SELECT count(*) FROM peta.pintu_air x WHERE x.khg_id = k.id AND ref.varian_utama(k.id, x.sumber)) AS pintu_air,
        (SELECT count(*) FROM peta.pompa x WHERE x.khg_id = k.id AND ref.varian_utama(k.id, x.sumber)) AS pompa,
        (SELECT round(sum(panjang_m) / 1000, 1) FROM peta.kanal c WHERE c.khg_id = k.id AND c.status = 'aktif'
            AND coalesce(c.sumber, '') NOT LIKE 'IMPOR_KHG:%') AS kanal_aktif_km,

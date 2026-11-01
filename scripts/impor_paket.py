@@ -4,10 +4,13 @@
     python3 scripts/impor_paket.py scripts/impor_paket_okt2026.json            # semua KHG di manifest
     python3 scripts/impor_paket.py <manifest> --khg 75,624 --tanpa-raster        # sebagian, DB saja
     python3 scripts/impor_paket.py <manifest> --hanya-simulasi                   # grid simulasi saja
+    python3 scripts/impor_paket.py <manifest> --hanya-pintu-air                  # pintu air varian saja
 
 Per KHG: lapisan 'bersama' dimuat dengan sumber IMPOR_KHG dan mengganti data lama KHG itu dari sumber lain
 (lihat db/impor_paket.sql, yang dihapus disalin ke schema cadangan); tiap varian DEM dimuat dengan sumber
-IMPOR_KHG:<kode> dan dicatat di ref.varian_dem (varian pertama = utama). Status versi KHG yang masih 'draft'
+IMPOR_KHG:<kode> dan dicatat di ref.varian_dem (varian pertama = utama). Pintu air varian (lapisan gates_required
+model pompa) adalah sekat usulan yang harus berupa pintu: dimuat ke peta.pintu_air dan sekatnya dihapus
+(db/impor_pintu_air.sql). Status versi KHG yang masih 'draft'
 menjadi 'proses'. DB lama: jalankan dulu db/migrations/2026-10-30_varian_dem.sql + db/10_api_views.sql. Raster: DEM tiap varian -> lapisan/khg_<id>/dem_<kode>/, ketebalan gambut -> .../gambut/,
 keterangan di .../meta.json. Simulasi: DEM tiap varian -> simulasi/dem/khg_<id>_<kode>.tif lalu simulasi/siapkan.py
 di container gambut_api (grid varian utama = khg_<id>.npz, varian lain = khg_<id>_<kode>.npz). Butuh GDAL (ogr2ogr, gdalwarp, gdaldem, gdal2tiles) dan container gambut_db.
@@ -32,7 +35,8 @@ CACHE = ROOT / "output" / "impor_cache"
 LAPISAN = ROOT / "lapisan"
 TABEL_BERSAMA = ("khg", "kanal", "sungai", "badan_air", "areal_terbakar", "hotspot", "usaha", "konsesi", "dmpg",
                  "sekat_existing", "unit_prioritas", "tma_stasiun", "tma_harian")
-TABEL_VARIAN = ("kanal_terpilih", "jalur_pompa", "rute_kanal_terpilih", "pompa", "sekat_usulan", "unit_prioritas")
+TABEL_VARIAN = ("kanal_terpilih", "jalur_pompa", "rute_kanal_terpilih", "pompa", "sekat_usulan", "unit_prioritas",
+                "pintu_air")
 DEM_STOP = ["p2:#1a9850", "p25:#91cf60", "p50:#d9ef8b", "p75:#fee08b", "p90:#d8a35d", "p98:#8c510a"]
 GAMBUT_STOP = ["0:#1e7b1e", "1:#8dbb1c", "3:#f2e318", "5:#f59e1f", "8:#eb4b1f"]   # = GAMBUT_RAMP di web
 
@@ -123,7 +127,28 @@ def muat(berkas, khg, sumber, lapisan, ganti):
                "-v", f"berkas_hotspot={nama_hotspot}", "-P", "footer=off",
                sql=(ROOT / "db" / "impor_paket.sql").read_text())
     print("\n".join("   " + l for l in out.strip().splitlines()))
+    if "pintu_air" in lapisan:
+        pintu_air(khg, sumber)
     psql("-c", "DROP SCHEMA IF EXISTS impor CASCADE")
+
+
+def pintu_air(khg, sumber):
+    """impor.pintu_air (gates_required) -> peta.pintu_air; sekat usulan di titik yang sama dipindah (db/impor_pintu_air.sql)"""
+    out = psql("-v", f"khg={khg}", "-v", f"sumber={sumber}", "-P", "footer=off",
+               sql=(ROOT / "db" / "impor_pintu_air.sql").read_text())
+    print("\n".join("   " + l for l in out.strip().splitlines()))
+
+
+def impor_pintu_air(berkas, k):
+    """Hanya pintu air tiap varian (memindah sekat usulan yang sudah diimpor), tanpa mengimpor ulang lapisan lain."""
+    print(f"== pintu air KHG {k['id']} ({k['folder']})")
+    for v in k["varian"]:
+        if v.get("pintu_air"):
+            print(f" - varian {v['kode']}")
+            psql("-c", "DROP SCHEMA IF EXISTS impor CASCADE; CREATE SCHEMA impor")
+            stage(berkas, "pintu_air", v["pintu_air"])
+            pintu_air(k["id"], f"IMPOR_KHG:{v['kode']}")
+            psql("-c", "DROP SCHEMA IF EXISTS impor CASCADE")
 
 
 def lit(s):
@@ -248,11 +273,18 @@ def main():
     ap.add_argument("--hanya-raster", action="store_true")
     ap.add_argument("--hanya-simulasi", action="store_true", help="hanya siapkan grid simulasi")
     ap.add_argument("--tanpa-simulasi", action="store_true")
+    ap.add_argument("--hanya-pintu-air", action="store_true",
+                    help="hanya pintu air varian (DB lama yang diimpor sebelum lapisan pintu_air ada)")
     a = ap.parse_args()
     m = json.loads(Path(a.manifest).read_text())
     berkas = Berkas(Path(os.path.expanduser(m["akar"])), m.get("zip", {}))
     pilih = {int(x) for x in a.khg.split(",")} if a.khg else None
     daftar = [k for k in m["khg"] if pilih is None or k["id"] in pilih]
+    if a.hanya_pintu_air:
+        for k in daftar:
+            impor_pintu_air(berkas, k)
+        print("== statistik:", psql("-At", "-c", "SELECT api.refresh_statistik()").strip())
+        return
     if not (a.hanya_raster or a.hanya_simulasi):
         for k in daftar:
             impor_db(berkas, k)

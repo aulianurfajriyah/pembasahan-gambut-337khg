@@ -21,6 +21,7 @@
       "varian": [
         {"kode": "WORLDDEM", "label": "WorldDEM", "dem": "KHG BENGKALIS/DTM_BENGKALIS_WD.tif",
          "pompa": "KHG BENGKALIS/pump_run.gpkg|pump_stations",
+         "pintu_air": "KHG BENGKALIS/pump_run.gpkg|gates_required?kind = 'sekat_proposed'",
          "jalur_pompa": "KHG BENGKALIS/pump_run.gpkg|pump_routes",
          "kanal_terpilih": "KHG BENGKALIS/pump_run.gpkg|canal_segments?selected = 1",
          "sekat_usulan": "KHG BENGKALIS/pump_run.gpkg|sekat_proposed"}
@@ -72,6 +73,7 @@
       "varian": [
         {"kode": "LIDAR", "label": "LiDAR 25 m", "dem": "KHG Air Hitam Laut - Buntu Kecil/dem_lidar_25m.tif",
          "pompa": "KHG Air Hitam Laut - Buntu Kecil/pompa.gpkg|pump_stations",
+         "pintu_air": "KHG Air Hitam Laut - Buntu Kecil/pompa.gpkg|gates_required?kind = 'sekat_proposed'",
          "jalur_pompa": "KHG Air Hitam Laut - Buntu Kecil/pompa.gpkg|pump_routes",
          "kanal_terpilih": "KHG Air Hitam Laut - Buntu Kecil/kanal.gpkg|kanal_terpilih",
          "sekat_usulan": "KHG Air Hitam Laut - Buntu Kecil/sekat.gpkg|sekat_terpilih"}
@@ -91,6 +93,7 @@
       "varian": [
         {"kode": "WORLDDEM", "label": "WorldDEM", "dem": "KHG Balangan Batangalai/DTM_WORLDDEM.tif",
          "pompa": "KHG Balangan Batangalai/pump_run.gpkg|pump_stations",
+         "pintu_air": "KHG Balangan Batangalai/pump_run.gpkg|gates_required?kind = 'sekat_proposed'",
          "jalur_pompa": "KHG Balangan Batangalai/pump_run.gpkg|pump_routes",
          "kanal_terpilih": "KHG Balangan Batangalai/pump_run.gpkg|canal_segments?selected = 1",
          "sekat_usulan": "KHG Balangan Batangalai/pump_run.gpkg|sekat_proposed"}
@@ -158,6 +161,7 @@
       "varian": [
         {"kode": "BRGM", "label": "DTM kontur BRGM", "dem": "KHG KAPUAS BARITO /DTM_KAPUASBARITO_KONTURBRGM.tif",
          "pompa": "KHG KAPUAS BARITO /kapuasbarito.gpkg|pump_stations",
+         "pintu_air": "KHG KAPUAS BARITO /kapuasbarito.gpkg|gates_required?kind = 'sekat_proposed'",
          "jalur_pompa": "KHG KAPUAS BARITO /kapuasbarito.gpkg|pump_routes",
          "kanal_terpilih": "KHG KAPUAS BARITO /KANAL_TERPILIH_KAPUASBARITO.shp?selected = 1",
          "sekat_usulan": "KHG KAPUAS BARITO /SEKAT_KANAL_KAPUASBARITO.shp"}
@@ -176,12 +180,14 @@
       "varian": [
         {"kode": "WORLDDEM", "label": "WorldDEM", "dem": "KHG Menpawah Peniti/DTM world dem.tif",
          "pompa": "KHG Menpawah Peniti/pump_run.gpkg|pump_stations",
+         "pintu_air": "KHG Menpawah Peniti/pump_run.gpkg|gates_required?kind = 'sekat_proposed'",
          "jalur_pompa": "KHG Menpawah Peniti/pump_run.gpkg|pump_routes",
          "kanal_terpilih": "KHG Menpawah Peniti/pump_run.gpkg|canal_segments?selected = 1",
          "sekat_usulan": "KHG Menpawah Peniti/pump_run.gpkg|sekat_proposed",
          "unit_prioritas": "KHG Menpawah Peniti/pump_run.gpkg|subkhg_selected"},
         {"kode": "DEMNAS", "label": "DEMNAS (DTM smooth)", "dem": "KHG Menpawah Peniti DEMNAS/dtm smooth.tif",
          "pompa": "KHG Menpawah Peniti DEMNAS/pump_run_demnas.gpkg|pump_stations",
+         "pintu_air": "KHG Menpawah Peniti DEMNAS/pump_run_demnas.gpkg|gates_required?kind = 'sekat_proposed'",
          "jalur_pompa": "KHG Menpawah Peniti DEMNAS/pump_run_demnas.gpkg|pump_routes",
          "kanal_terpilih": "KHG Menpawah Peniti DEMNAS/pump_run_demnas.gpkg|canal_segments?selected = 1",
          "sekat_usulan": "KHG Menpawah Peniti DEMNAS/pump_run_demnas.gpkg|sekat_proposed",
@@ -209,6 +215,7 @@
       "varian": [
         {"kode": "LIDAR", "label": "LiDAR 25 m", "dem": "KHG Mendahara - Batanghari/dem_lidar_25m.tif",
          "pompa": "KHG Mendahara - Batanghari/pompa.gpkg|pump_stations",
+         "pintu_air": "KHG Mendahara - Batanghari/pompa.gpkg|gates_required?kind = 'sekat_proposed'",
          "jalur_pompa": "KHG Mendahara - Batanghari/pompa.gpkg|pump_routes",
          "kanal_terpilih": "KHG Mendahara - Batanghari/kanal.gpkg|kanal_terpilih",
          "sekat_usulan": "KHG Mendahara - Batanghari/sekat.gpkg|sekat_terpilih"}
@@ -233,12 +240,14 @@
       "varian": [
         {"kode": "LIDAR", "label": "LiDAR (DTM BRGM 10 m)", "dem": "KHG Punggurbesar-Kapuas LiDAR/dtm_brgm_10m.tif",
          "pompa": "KHG Punggurbesar-Kapuas LiDAR/pompa.gpkg|pump_stations",
+         "pintu_air": "KHG Punggurbesar-Kapuas LiDAR/pompa.gpkg|gates_required?kind = 'sekat_proposed'",
          "jalur_pompa": "KHG Punggurbesar-Kapuas LiDAR/pompa.gpkg|pump_routes",
          "kanal_terpilih": "KHG Punggurbesar-Kapuas LiDAR/kanal.gpkg|kanal_terpilih",
          "sekat_usulan": "KHG Punggurbesar-Kapuas LiDAR/sekat.gpkg|sekat_terpilih",
          "unit_prioritas": "KHG Punggurbesar-Kapuas LiDAR/batas_subkhg.gpkg"},
         {"kode": "DEMNAS", "label": "DEMNAS 30 m", "dem": "KHG Punggurbesar-Kapuas DEMNAS/dem_demnas_30m.tif",
          "pompa": "KHG Punggurbesar-Kapuas DEMNAS/pompa.gpkg|pump_stations",
+         "pintu_air": "KHG Punggurbesar-Kapuas DEMNAS/pompa.gpkg|gates_required?kind = 'sekat_proposed'",
          "jalur_pompa": "KHG Punggurbesar-Kapuas DEMNAS/pompa.gpkg|pump_routes",
          "kanal_terpilih": "KHG Punggurbesar-Kapuas DEMNAS/kanal.gpkg|kanal_terpilih",
          "sekat_usulan": "KHG Punggurbesar-Kapuas DEMNAS/sekat.gpkg|sekat_terpilih",
@@ -265,12 +274,14 @@
       "varian": [
         {"kode": "WORLDDEM", "label": "WorldDEM 12 m", "dem": "zip:ss/raster/dem_worlddem_12m.tif",
          "pompa": "zip:ss/vektor/pompa.gpkg|pump_stations",
+         "pintu_air": "zip:ss/vektor/pompa.gpkg|gates_required?kind = 'sekat_proposed'",
          "jalur_pompa": "zip:ss/vektor/pompa.gpkg|pump_routes",
          "kanal_terpilih": "zip:ss/vektor/kanal.gpkg|kanal_terpilih",
          "sekat_usulan": "zip:ss/vektor/sekat.gpkg|sekat_terpilih",
          "catatan": "Run B: S01-S03."},
         {"kode": "LIDAR", "label": "LiDAR KLH 2020 20 m", "dem": "zip:ss/raster/dem_lidar_klh2020_20m.tif",
          "pompa": "KHG Sugihan Saleh/04_pompa_A_LiDAR20m_S02_S03/pump.gpkg|pump_stations",
+         "pintu_air": "KHG Sugihan Saleh/04_pompa_A_LiDAR20m_S02_S03/pump.gpkg|gates_required?kind = 'sekat_proposed'",
          "jalur_pompa": "KHG Sugihan Saleh/04_pompa_A_LiDAR20m_S02_S03/pump.gpkg|pump_routes",
          "kanal_terpilih": "KHG Sugihan Saleh/04_pompa_A_LiDAR20m_S02_S03/pump.gpkg|canal_segments?selected = 1",
          "sekat_usulan": "KHG Sugihan Saleh/04_pompa_A_LiDAR20m_S02_S03/pump.gpkg|sekat_proposed",
@@ -290,6 +301,7 @@
       "varian": [
         {"kode": "WORLDDEM", "label": "WorldDEM 12 m", "dem": "KHG Sugihan Lumpur WorldDEM 12m/DTM_worlddem_12m.tif",
          "pompa": "KHG Sugihan Lumpur WorldDEM 12m/pump_run.gpkg|pump_stations",
+         "pintu_air": "KHG Sugihan Lumpur WorldDEM 12m/pump_run.gpkg|gates_required?kind = 'sekat_proposed'",
          "jalur_pompa": "KHG Sugihan Lumpur WorldDEM 12m/pump_run.gpkg|pump_routes",
          "kanal_terpilih": "KHG Sugihan Lumpur WorldDEM 12m/pump_run.gpkg|canal_segments?selected = 1",
          "sekat_usulan": "KHG Sugihan Lumpur WorldDEM 12m/pump_run.gpkg|sekat_proposed",
