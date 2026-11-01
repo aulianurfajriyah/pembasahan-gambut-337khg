@@ -88,6 +88,7 @@ if [ "$($SSH "cd /srv/gambut/db && docker compose exec -T db psql -U postgres -d
   echo "   skema kosong (01-03, tanpa data)"
   $SSH 'cd /srv/gambut/db && for f in 01_schema.sql 02_trigger_fungsi.sql 03_views.sql; do
     docker compose exec -T -e PGOPTIONS="-c client_min_messages=warning" db psql -U postgres -d gambut -v ON_ERROR_STOP=1 -q -f - < $f || exit 1; done'
+  PSQL="$SSH docker exec -i gambut_db psql -X -q -U postgres -d gambut -v ON_ERROR_STOP=1" ../db/migrasi.sh --tandai
   else
   echo "   upload $(du -h "$DUMP" | cut -f1) dump (bisa dilanjutkan bila terputus)"
   eval "$R --partial --progress \"$DUMP\" gambut@$IP:/srv/backup/awal.dump"

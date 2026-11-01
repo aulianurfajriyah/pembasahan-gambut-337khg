@@ -30,6 +30,7 @@ PSQL="psql -v ON_ERROR_STOP=1 -q"
 
 $PSQL -c "DROP SCHEMA IF EXISTS alur, peta, ref, analisis, staging CASCADE"
 for f in 01_schema.sql 02_trigger_fungsi.sql 03_views.sql; do $PSQL -f "$f"; done
+./migrasi.sh --tandai   # build baru sudah memuat semua migrasi
 ./stage.sh
 for f in 04_load_ref.sql 05_load_sekat.sql 06_load_bluebook.sql; do echo "== $f"; $PSQL -f "$f"; done
 
