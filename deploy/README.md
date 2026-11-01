@@ -105,3 +105,29 @@ Urutan deploy (piecewise, jangan `deploy.sh`):
 Query lambat setelahnya: `SELECT calls, round(mean_exec_time) AS ms, left(query, 120) FROM pg_stat_statements ORDER BY total_exec_time DESC LIMIT 20;`
 
 **Rollback.** Kembalikan berkas lama lalu recreate container: `tar xzf /srv/backup/rollback_perf.tgz && cd db && docker compose up -d --force-recreate db api proxy`. Fungsi, view, dan kolom bbox baru tidak perlu dihapus: hasilnya sama dengan versi lama. Bila tetap ingin skema lama, pasang ulang definisi `ref.varian_utama`, `api.khg`, `api.khg_ubin`, `alur.v_dashboard` dari commit sebelum PR ini.
+
+## G. Deploy otomatis (CD) dari GitHub Actions
+Setiap push ke `main` menjalankan CI ([ci.yml](../.github/workflows/ci.yml)). Bila **lint** dan **db-api** hijau, [deploy.yml](../.github/workflows/deploy.yml) memanggil [ci_deploy.sh](ci_deploy.sh) ke VM produksi. CI merah = tidak ada deploy.
+
+Isi `ci_deploy.sh` (bertahap, bukan `deploy.sh`, jadi `lapisan/`, `simulasi/data/`, `.env`, dan `web/` di VM tidak tersentuh):
+1. Backup definisi skema (`/srv/backup/skema_<rev>.dump`) dan berkas lama (`/srv/backup/rollback_<rev>.tgz`); disimpan 5 terakhir.
+2. `db/migrasi.sh` memasang migrasi baru.
+3. rsync `api/`, `db/*.sql`, compose, Caddyfile.web.
+4. `docker compose up -d db api martin proxy`; service yang berkasnya di-mount berubah di-recreate, Caddyfile di-reload.
+5. Uji asap publik: semua koleksi dan proses baca 200, tulis tanpa login 401, ubin Martin 200.
+
+Uji asap gagal -> berkas lama dikembalikan otomatis dan job merah. Migrasi tidak di-undo (selalu tambahan, aturan di CI), jadi kode lama tetap jalan di skema baru. Web (repo LH-KHG) tidak ikut: deploy web tetap `deploy.sh` / `compose up --build web`.
+
+### Setup sekali (Anda sendiri, di GitHub dan di VM)
+1. **Kunci khusus CI**, jangan pakai kunci pribadi:
+   ```bash
+   ssh-keygen -t ed25519 -N '' -C gh-actions-deploy -f ~/.ssh/gambut_ci
+   ssh-copy-id -i ~/.ssh/gambut_ci.pub -o IdentityFile=~/.ssh/gambut_vps gambut@<IP>
+   ssh-keyscan -t ed25519 <IP>
+   ```
+2. GitHub repo -> *Settings -> Environments -> New environment* `production`. Opsional: *Required reviewers* bila setiap deploy harus disetujui, dan *Deployment branches* = `main`.
+3. Di environment itu, **Secrets**: `DEPLOY_HOST` (IP VM), `DEPLOY_USER` (`gambut`), `DEPLOY_SSH_KEY` (isi `~/.ssh/gambut_ci`), `DEPLOY_KNOWN_HOSTS` (keluaran `ssh-keyscan`). **Variables**: `API_URL` (mis. `https://103-174-115-24.sslip.io`, tanpa garis miring akhir).
+4. *Settings -> Branches -> Branch protection* untuk `main`: wajib PR dan status check `lint`, `db-api` (gerbang sebelum merge).
+5. Pertama kali: *Actions -> Deploy -> Run workflow* dan pantau lognya.
+
+Matikan CD: nonaktifkan workflow Deploy di tab Actions. Deploy ulang commit yang sama: *Run workflow*. Rollback manual: bagian E/F, atau revert PR lalu merge.

@@ -98,6 +98,7 @@ scripts/  build_gpkg.py (sekat), build_hotspot.py (hotspot)
   - **lint**: shellcheck, sintaks Python, JSON, semua kombinasi `docker compose`, dan Caddyfile.
   - **db-api**: membangun skema baru (01–03, 09, 10), mengisi data uji [db/ci/seed.sql](db/ci/seed.sql), menjalankan `tests.sql`, menyalakan pygeoapi, lalu menguji semua koleksi, proses, dan satu operasi tulis ([db/ci/smoke_api.sh](db/ci/smoke_api.sh)).
   - **aturan**: PR yang menambah `db/migrations/*` juga harus mengubah 01–03 atau `10_api_views.sql`.
+- CD ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)): setelah CI hijau di `main`, backend otomatis terpasang di VM produksi dan diuji asap; gagal = rollback otomatis. Setup dan rollback: [deploy/README.md](deploy/README.md) bagian G.
 - Perubahan skema: tambah migrasi baru dan lipat perubahannya ke 01–03/10. Pasang dengan `db/migrasi.sh` (lihat [docs/07](docs/07_PANDUAN_IMPOR.md)).
 - Uji lokal sebelum PR: `shellcheck -S warning $(git ls-files '*.sh')`, lalu `psql -f db/tests.sql` di DB lokal.
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Uji asap OGC API (dipakai CI): semua koleksi dan proses baca harus menjawab 200.
 #   db/ci/smoke_api.sh http://localhost:5098
+#   SOLO_BACA=1 db/ci/smoke_api.sh https://...   (tanpa uji tulis; dipakai deploy/ci_deploy.sh)
 set -euo pipefail
 B=${1:-http://localhost:5098}
 for _ in $(seq 60); do curl -sf -o /dev/null "$B/" && break; sleep 3; done
@@ -19,6 +20,7 @@ for p in ringkasan-dashboard status-sinkron "riwayat-khg:{\"khg_id\":$khg}" "val
   inputs=${p#*:}; [ "$inputs" = "$p" ] && inputs='{}'
   cek "processes/${p%%:*}" -X POST -H 'Content-Type: application/json' -d "{\"inputs\":$inputs}" "$B/processes/${p%%:*}/execution"
 done
+[ -z "${SOLO_BACA:-}" ] || exit $gagal   # SOLO_BACA=1: deploy produksi tidak boleh menulis data
 # tulis (di produksi dijaga Basic Auth Caddy): role ogc_writer harus bisa INSERT + DELETE
 x=$(curl -sf "$B/collections/khg/items/$khg?f=json" | python3 -c "import sys,json; from statistics import mean
 g=json.load(sys.stdin)['geometry']['coordinates'][0][0]; print(mean(c[0] for c in g), mean(c[1] for c in g))")
