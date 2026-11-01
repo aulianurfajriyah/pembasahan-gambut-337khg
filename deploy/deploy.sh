@@ -28,10 +28,13 @@ $SSH 'cloud-init status --wait >/dev/null; docker compose version --short' | {
 echo "== 2. sinkron file"
 eval "$R --delete ../api/ gambut@$IP:/srv/gambut/api/"
 eval "$R ../db/*.sql ../db/docker-compose.yml docker-compose.prod.yml docker-compose.web.yml Caddyfile.web backup.sh gambut@$IP:/srv/gambut/db/"
-$SSH 'mkdir -p /srv/gambut/simulasi /srv/gambut/lapisan'
-mkdir -p ../simulasi/data ../lapisan   # boleh kosong (DB baru): rsync gagal bila sumbernya tidak ada
-eval "$R --delete ../simulasi/data/ gambut@$IP:/srv/gambut/simulasi/data/"   # ubin medan simulasi
-eval "$R --delete ../lapisan/ gambut@$IP:/srv/gambut/lapisan/"               # raster DEM/gambut per KHG
+$SSH 'mkdir -p /srv/gambut/simulasi/data /srv/gambut/lapisan'
+# ubin medan simulasi + raster DEM/gambut per KHG. Folder kosong di laptop dilewati: --delete akan menghapus
+# data di VM (data ini biasanya dikirim scripts/kirim_db_vm.sh dari laptop lain)
+for d in simulasi/data lapisan; do
+  if [ -n "$(ls -A "../$d" 2>/dev/null)" ]; then eval "$R --delete ../$d/ gambut@$IP:/srv/gambut/$d/"
+  else echo "   $d kosong di laptop: dilewati, isi di VM tidak disentuh"; fi
+done
 if [ -n "$WEB_DIR" ]; then
   eval "$R --delete --exclude node_modules --exclude .next --exclude '.env*' --exclude .git --exclude .claude \
     --exclude '*.tsbuildinfo' --exclude public/maplibre \"$WEB_DIR/\" gambut@$IP:/srv/gambut/web/"

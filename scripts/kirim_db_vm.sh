@@ -39,9 +39,10 @@ $SSH 'cd /srv/gambut/db && set -a && . ./.env && set +a &&
 $SSH "$VPSQL" < db/10_api_views.sql 2>&1 | grep -v "NOTICE\|DETAIL\|drop cascades" || true
 
 echo "== 5. raster & grid simulasi"
-mkdir -p lapisan simulasi/data
-rsync -az --delete -e "ssh -i $KEY" lapisan/ "gambut@$IP:/srv/gambut/lapisan/"
-rsync -az --delete -e "ssh -i $KEY" simulasi/data/ "gambut@$IP:/srv/gambut/simulasi/data/"
+for d in lapisan simulasi/data; do   # folder kosong di laptop dilewati: --delete akan menghapus isi di VM
+  if [ -n "$(ls -A "$d" 2>/dev/null)" ]; then rsync -az --delete -e "ssh -i $KEY" "$d/" "gambut@$IP:/srv/gambut/$d/"
+  else echo "   $d kosong di laptop: dilewati"; fi
+done
 
 echo "== 6. statistik planner, nyalakan API, cek"
 # pg_restore tidak membawa statistik planner: tanpa ANALYZE query bisa memakai rencana buruk (CPU tinggi)
