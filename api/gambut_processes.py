@@ -6,7 +6,8 @@ Proses tulis (wajib login di proxy): ajukan-review, putuskan-review, refresh-sta
 """
 import json
 import os
-from functools import cache
+import time
+from functools import cache, lru_cache
 
 from sqlalchemy import create_engine, text
 
@@ -18,7 +19,7 @@ def engine(role):
     pw = os.environ['PW_OGC_WRITER' if role == 'ogc_writer' else 'PW_OGC_READER']
     return create_engine(
         f"postgresql+psycopg2://{role}:{pw}@{os.environ['PG_HOST']}:{os.environ.get('PG_PORT', '5432')}"
-        f"/{os.environ['PG_DB']}", pool_pre_ping=True, pool_size=2)
+        f"/{os.environ['PG_DB']}", pool_pre_ping=True, pool_size=5)
 
 
 def query(sql, params, role='ogc_reader', write=False):
@@ -75,7 +76,13 @@ class RingkasanDashboard(_Base):
                 {}, 'Satu objek KPI', {})
 
     def run(self, data):
-        return _status(query('SELECT * FROM alur.v_dashboard', {}))
+        global _dashboard
+        if time.monotonic() - _dashboard[0] > 30:   # KPI nasional: cukup segar 30 dtk, query penuhnya ratusan ms
+            _dashboard = (time.monotonic(), _status(query('SELECT * FROM alur.v_dashboard', {})))
+        return _dashboard[1]
+
+
+_dashboard = (float('-inf'), None)
 
 
 class ValidasiKHG(_Base):
@@ -272,7 +279,15 @@ class SimulasiPembasahan(_Base):
                                max((waktu AT TIME ZONE 'Asia/Jakarta')::date) AS tgl_akhir
                           FROM peta.tmat_bacaan t WHERE t.logger_id = l.id) b ON b.n_bacaan > 0
                      WHERE l.khg_id = :khg""", {'khg': kid, 'epsg': grid['meta']['epsg'], 'stat': statistik})
-            return model.jalankan(kid, sekat, data.get('skenario') or 'final', data.get('parameter') or {}, biaya,
-                                  hotspot, kondisi, statistik, stasiun, varian)
+            # kunci = semua masukan model + waktu grid disiapkan: edit sekat / grid baru otomatis jadi kunci baru
+            return _simulasi(json.dumps([[kid, sekat, data.get('skenario') or 'final', data.get('parameter') or {},
+                                          biaya, hotspot, kondisi, statistik, stasiun, varian],
+                                         grid['meta'].get('dibuat')], default=str))
         except ValueError as err:
             raise ProcessorExecuteError(str(err)) from err
+
+
+@lru_cache(maxsize=6)   # ponytail: cache per worker (±10 MB per hasil); simulasi sama diulang = instan
+def _simulasi(kunci):
+    import simulasi_model as model
+    return model.jalankan(*json.loads(kunci)[0])
