@@ -6,6 +6,7 @@ cache_size_mb: 0
 postgres:
   connection_string: ${DATABASE_URL}
   pool_size: 8
+  auto_bounds: skip   # bounds tidak dipakai web; menghitungnya saat start membebani DB (timeout di view besar)
   auto_publish:
     from_schemas: api
     tables: true

@@ -27,6 +27,8 @@ CREATE UNIQUE INDEX ON api.khg_statistik (khg_id);
 
 -- KHG: batas + status alur + statistik + skor prioritas (layar Dashboard & Daftar KHG)
 -- penyederhanaan: skor_prioritas = 100 x (0.4 porsi terbakar + 0.3 porsi gambut >= 3 m + 0.3 hotspot 30h relatif)
+-- hotspot maksimum lewat subquery, bukan window max() OVER (): window menghalangi filter (bbox ubin, id) turun ke
+-- ref.khg, sehingga setiap request menghitung ke-866 KHG
 CREATE VIEW api.khg AS
 SELECT k.id, k.kode, k.nama, p.nama AS provinsi, p.singkatan AS provinsi_singkat, k.target_2026, k.luas_ha,
        st.nomor AS versi, st.status, st.diajukan_oleh, st.diajukan_at, st.reviewer, st.diputuskan_at,
@@ -44,7 +46,7 @@ SELECT k.id, k.kode, k.nama, p.nama AS provinsi, p.singkatan AS provinsi_singkat
            AND coalesce(c.sumber, '') NOT LIKE 'IMPOR_KHG:%') AS kanal_aktif_km,
        s.porsi_pernah_terbakar, s.porsi_gambut_dalam,
        round(100 * (0.4 * coalesce(s.porsi_pernah_terbakar, 0) + 0.3 * coalesce(s.porsi_gambut_dalam, 0)
-                  + 0.3 * coalesce(s.hotspot_30h::numeric / nullif(max(s.hotspot_30h) OVER (), 0), 0)))::int AS skor_prioritas,
+                  + 0.3 * coalesce(s.hotspot_30h::numeric / nullif((SELECT max(hotspot_30h) FROM api.khg_statistik), 0), 0)))::int AS skor_prioritas,
        k.geom,
        -- bbox terpisah agar klien bisa memusatkan peta tanpa mengunduh seluruh batas KHG
        ST_XMin(k.geom) AS bbox_xmin, ST_YMin(k.geom) AS bbox_ymin,
