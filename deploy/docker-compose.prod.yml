@@ -6,7 +6,8 @@ services:
     command: >        # nilai memori diisi deploy.sh sesuai RAM server (PG_* di .env)
       postgres -c shared_buffers=${PG_SHARED_BUFFERS:-2GB} -c effective_cache_size=${PG_CACHE:-6GB}
                -c work_mem=${PG_WORK_MEM:-32MB} -c maintenance_work_mem=${PG_MAINT_MEM:-512MB}
-               -c max_wal_size=2GB -c jit=off
+               -c max_wal_size=2GB -c jit=off -c random_page_cost=1.1 -c effective_io_concurrency=200
+               -c shared_preload_libraries=pg_stat_statements -c log_min_duration_statement=500
   api:
     environment:
       PYGEOAPI_URL: https://${SITE_ADDRESS}
