@@ -1,0 +1,59 @@
+# CD: deploy otomatis ke VM produksi setiap CI hijau di main (gerbang = workflow CI: lint, db-api).
+#   Hanya satu deploy berjalan sekaligus; yang menunggu diganti yang terbaru.
+#   Commit yang bukan lagi ujung main dilewati. Gagal uji asap -> berkas lama dikembalikan (deploy/ci_deploy.sh).
+#   Manual / deploy ulang: Actions -> Deploy -> Run workflow (tetap lewat environment production).
+# Setup sekali: deploy/README.md bagian G (secrets & environment `production`).
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # workflow_run juga terpicu CI yang gagal / dari fork: hanya push ke main yang sukses yang lolos
+    if: >-
+      github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: ${{ vars.API_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: lewati bila bukan ujung main
+        id: ujung
+        run: |
+          git fetch -q origin main
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then echo "deploy=1" >> "$GITHUB_OUTPUT"
+          else echo "::notice::HEAD bukan ujung main, deploy commit yang lebih baru yang akan jalan"; fi
+      - name: kunci SSH
+        if: steps.ujung.outputs.deploy == '1'
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          umask 077
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: deploy
+        if: steps.ujung.outputs.deploy == '1'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          API_URL: ${{ vars.API_URL }}
+        run: DEPLOY_KEY="$HOME/.ssh/deploy_key" deploy/ci_deploy.sh
