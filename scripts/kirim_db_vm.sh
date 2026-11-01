@@ -43,7 +43,9 @@ mkdir -p lapisan simulasi/data
 rsync -az --delete -e "ssh -i $KEY" lapisan/ "gambut@$IP:/srv/gambut/lapisan/"
 rsync -az --delete -e "ssh -i $KEY" simulasi/data/ "gambut@$IP:/srv/gambut/simulasi/data/"
 
-echo "== 6. nyalakan API, cek"
+echo "== 6. statistik planner, nyalakan API, cek"
+# pg_restore tidak membawa statistik planner: tanpa ANALYZE query bisa memakai rencana buruk (CPU tinggi)
+$SSH "$VPSQL" <<< "VACUUM (ANALYZE)"
 $SSH "$VPSQL -tA" <<'SQL'
 SELECT api.refresh_statistik() \g /dev/null
 SELECT 'VM -> KHG: ' || count(*) || ', DB ' || pg_size_pretty(pg_database_size('gambut')) FROM ref.khg;

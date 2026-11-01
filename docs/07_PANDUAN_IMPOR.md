@@ -34,7 +34,8 @@ Langkah yang dijalankan skrip:
 4. Semua migrasi ditandai sudah terpasang (`db/migrasi.sh --tandai`). Role dan view API dipasang ulang.
    Password di VM tidak berubah.
 5. Isi `lapisan/` dan `simulasi/data/` disinkron ke VM. Berkas di VM yang tidak ada di laptop dihapus.
-6. API dinyalakan lagi, statistik disegarkan, lalu dicek dengan satu request.
+6. `VACUUM (ANALYZE)` membuat statistik planner (tidak ikut di dump). API dinyalakan lagi, statistik
+   dashboard disegarkan, lalu dicek dengan satu request.
 
 Kalau unggahan terputus, ulangi dengan `LEWATI_DUMP=1` agar dump tidak dibuat ulang dan unggahan dilanjutkan.
 
